@@ -1,6 +1,6 @@
 // 初始化Supabase
-const supabaseUrl = 'https://your-project.supabase.co'
-const supabaseKey = 'your-anon-key'
+const supabaseUrl = 'https://fayorxvfxtrycjiiiyfu.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzY1MTAsImV4cCI6MjA3OTg1MjUxMH0.7znE_AaNg6zESUO-RoSsyFqxCgcxjPT_pQiN557e6Nw'
 const supabase = supabase.createClient(supabaseUrl, supabaseKey)
 
 // 修改注册函数
@@ -10,8 +10,8 @@ async function handleRegister() {
     const goal = parseInt(document.getElementById('reg-goal').value) || 2000;
 
     const { data, error } = await supabase.auth.signUp({
-        email: user + '@watertracker.com', // Supabase需要email格式
-        password: pass
+        email: email, // Supabase需要email格式
+        password: password
     });
 
     if (error) {
@@ -41,9 +41,10 @@ async function handleLogin() {
     const userInput = document.getElementById('login-user').value.trim();
     const passInput = document.getElementById('login-pass').value.trim();
 
-    const { data, error } = await supabase.auth.signIn({
-        email: userInput + '@watertracker.com',
-        password: passInput
+    const { data, error } = await supabase.auth.signInWithPassword()
+        email: email',
+        password: password
+
     });
 
     if (error) {
