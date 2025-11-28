@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全方位體重管理中心</title>
+    <title>全方位健康管理中心</title>
     <!-- 引入 Chart.js 用於繪圖 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 Supabase -->
@@ -15,6 +15,7 @@
         :root {
             --primary: #4F46E5; /* 靛藍色 */
             --secondary: #10B981; /* 翠綠色 */
+            --water: #3B82F6; /* 藍色 - 用於飲水功能 */
             --bg: #F3F4F6;
             --card-bg: #FFFFFF;
             --text-main: #1F2937;
@@ -42,16 +43,27 @@
             align-items: center;
         }
         .nav-title { color: white; font-weight: 700; font-size: 1.2rem; }
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
         .nav-links button {
             background: none;
             border: none;
             color: rgba(255,255,255,0.8);
-            margin-left: 15px;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
-        .nav-links button.active { color: white; border-bottom: 2px solid white; }
+        .nav-links button.active { 
+            color: white; 
+            background: rgba(255,255,255,0.2);
+        }
 
         /* 主要容器 */
         .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
@@ -89,6 +101,7 @@
         }
         .btn:hover { background-color: #4338ca; }
         .btn-danger { background-color: var(--danger); margin-top: 5px; font-size: 0.8rem; padding: 5px 10px; width: auto;}
+        .btn-water { background-color: var(--water); }
 
         /* 頁面切換邏輯 */
         .page-section { display: none; }
@@ -123,9 +136,94 @@
         .workout-content { padding: 15px; }
         .workout-title { font-weight: bold; margin-bottom: 5px; }
 
+        /* 飲水記錄器樣式 */
+        .water-progress-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .water-progress {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            background: #e0f0ff;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 8px solid #f0f0f0;
+        }
+        .water-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--water);
+            transition: height 1s ease;
+        }
+        .water-progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .water-percentage {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+            color: var(--water);
+        }
+        .water-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .water-quick-btn {
+            background: #e0f0ff;
+            border: 2px solid #d0e0ff;
+            border-radius: 8px;
+            padding: 10px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .water-quick-btn:hover {
+            background: var(--water);
+            color: white;
+            border-color: var(--water);
+        }
+        .water-custom-input {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .water-custom-input input {
+            flex: 1;
+        }
+        .water-history-list {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .water-history-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .water-time {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
         /* RWD */
         @media (max-width: 600px) {
-            .nav-links button { margin-left: 8px; font-size: 0.85rem; }
+            .nav-links { gap: 5px; }
+            .nav-links button { font-size: 0.8rem; padding: 4px 8px; }
+            .water-quick-actions { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
@@ -138,6 +236,7 @@
                 <button onclick="showPage('dashboard')" class="active" id="btn-dashboard">總覽</button>
                 <button onclick="showPage('calculator')" id="btn-calculator">計算器</button>
                 <button onclick="showPage('food')" id="btn-food">飲食</button>
+                <button onclick="showPage('water')" id="btn-water">飲水</button>
                 <button onclick="showPage('workout')" id="btn-workout">運動</button>
             </div>
         </div>
@@ -164,6 +263,10 @@
                 <div class="progress-container">
                     <div class="progress-label"><span>脂肪 (g)</span> <span id="fat-display">0 / 0</span></div>
                     <div class="progress-bar-bg"><div class="progress-bar-fill" id="fat-bar" style="background:#EF4444"></div></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label"><span>飲水 (ml)</span> <span id="water-display">0 / 0</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="water-bar" style="background:#3B82F6"></div></div>
                 </div>
             </div>
 
@@ -271,7 +374,58 @@
             </div>
         </div>
 
-        <!-- 4. 運動計畫頁 -->
+        <!-- 4. 飲水記錄頁 -->
+        <div id="water" class="page-section">
+            <div class="card">
+                <h2 style="border-color: var(--water); color: var(--water);">飲水記錄器</h2>
+                
+                <div class="water-progress-container">
+                    <div class="water-progress">
+                        <div class="water-wave" id="water-wave"></div>
+                        <div class="water-progress-text">
+                            <span class="water-percentage" id="water-percentage">0%</span>
+                            <div style="font-size: 0.8rem;">已完成</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="water-intake-info" style="text-align: center; margin: 15px 0;">
+                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--water);">
+                        <span id="current-water">0</span> / <span id="goal-water">2000</span> ml
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-light);">今日飲水進度</div>
+                </div>
+
+                <div class="water-quick-actions">
+                    <div class="water-quick-btn" onclick="addWater(100)">100ml</div>
+                    <div class="water-quick-btn" onclick="addWater(250)">250ml</div>
+                    <div class="water-quick-btn" onclick="addWater(500)">500ml</div>
+                    <div class="water-quick-btn" onclick="addWater(1000)">1000ml</div>
+                </div>
+
+                <div class="water-custom-input">
+                    <input type="number" id="custom-water-amount" class="form-control" placeholder="自訂毫升數">
+                    <button class="btn btn-water" onclick="submitCustomWater()">記錄飲水</button>
+                </div>
+
+                <div class="form-group">
+                    <label>每日飲水目標 (ml)</label>
+                    <input type="number" id="water-goal" value="2000" min="500" max="10000">
+                    <button class="btn" onclick="updateWaterGoal()" style="margin-top: 10px;">更新目標</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="border-color: var(--water); color: var(--water);">今日飲水記錄</h2>
+                <div id="water-history">
+                    <!-- JS 動態生成 -->
+                    <p style="text-align: center; color: #999;">尚無記錄</p>
+                </div>
+                <button class="btn btn-danger" onclick="resetWaterDay()" style="margin-top: 15px;">重置今日記錄</button>
+            </div>
+        </div>
+
+        <!-- 5. 運動計畫頁 -->
         <div id="workout" class="page-section">
             <div class="card">
                 <h2>推薦運動計畫</h2>
@@ -281,7 +435,6 @@
                     <!-- 運動卡片 1 -->
                     <div class="workout-card">
                         <div class="workout-img" style="background: #e0e7ff; color: #4F46E5;">
-                            <!-- 這裡可以換成 <img> 標籤 -->
                             🏃‍♂️ 有氧訓練
                         </div>
                         <div class="workout-content">
@@ -321,8 +474,8 @@
         // ---------------------------------------------------------
         // 1. Supabase 設定 (請務必替換成你自己的 URL 和 Key)
         // ---------------------------------------------------------
-       const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzY1MTAsImV4cCI6MjA3OTg1MjUxMH0.7znE_AaNg6zESUO-RoSsyFqxCgcxjPT_pQiN557e6Nw';
+        const SUPABASE_URL = 'https://你的專案網址.supabase.co'; 
+        const SUPABASE_KEY = '你的_ANON_KEY'; 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // ---------------------------------------------------------
@@ -334,7 +487,8 @@
             calories: 2000,
             protein: 100, // 假設值
             carbs: 250,
-            fat: 65
+            fat: 65,
+            water: 2000 // 新增飲水目標
         };
         // 從 LocalStorage 讀取目標 (如果有)
         const savedGoals = localStorage.getItem('userGoals');
@@ -342,14 +496,20 @@
             userGoals = JSON.parse(savedGoals);
         }
 
+        // 飲水相關變數
+        let todayWaterIntake = 0;
+        let waterRecords = [];
+
         // 初始化日期欄位為今天
         document.getElementById('weight-date').valueAsDate = new Date();
         document.getElementById('food-date').valueAsDate = new Date();
+        document.getElementById('water-goal').value = userGoals.water;
 
         // 頁面載入時執行
         window.onload = async function() {
             await fetchWeights();
             await fetchFoods();
+            await fetchWaterRecords();
             updateProgressBars();
         };
 
@@ -369,6 +529,7 @@
             // 如果切回 Dashboard，重新整理數據
             if(pageId === 'dashboard') {
                 fetchFoods(); // 重新計算今日攝取
+                fetchWaterRecords(); // 重新計算今日飲水
             }
         }
 
@@ -409,11 +570,18 @@
             userGoals.fat = Math.round((tdee * 0.3) / 9);
             userGoals.carbs = Math.round((tdee * 0.5) / 4);
 
+            // 根據體重設定飲水目標 (每公斤30-40ml)
+            userGoals.water = Math.round(weight * 35);
+
+            // 更新飲水目標輸入框
+            document.getElementById('water-goal').value = userGoals.water;
+
             // 存入 LocalStorage
             localStorage.setItem('userGoals', JSON.stringify(userGoals));
             
-            alert(`計算完成！已將每日目標設為 ${tdee} kcal`);
+            alert(`計算完成！已將每日目標設為 ${tdee} kcal，飲水目標 ${userGoals.water} ml`);
             updateProgressBars(); // 更新 Dashboard 顯示
+            updateWaterDisplay(); // 更新飲水顯示
         }
 
         // ---------------------------------------------------------
@@ -532,8 +700,6 @@
         }
 
         async function fetchFoods() {
-            // 這裡我們只抓取「今天」的資料來顯示在 Dashboard 和 列表
-            // 實際應用可能需要讓使用者選擇日期，這裡簡化為抓取 input date 的日期
             const targetDate = document.getElementById('food-date').value;
 
             const { data, error } = await supabase
@@ -605,15 +771,172 @@
             updateProgressBars();
         }
 
+        // ---------------------------------------------------------
+        // 7. 飲水功能 (Supabase)
+        // ---------------------------------------------------------
+        async function fetchWaterRecords() {
+            const today = new Date().toISOString().split('T')[0];
+
+            const { data, error } = await supabase
+                .from('water_records')
+                .select('*')
+                .eq('date', today)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('載入飲水記錄錯誤:', error);
+                return;
+            }
+
+            waterRecords = data || [];
+            calculateWaterIntake();
+            renderWaterHistory();
+        }
+
+        function calculateWaterIntake() {
+            todayWaterIntake = 0;
+            waterRecords.forEach(record => {
+                todayWaterIntake += record.amount || 0;
+            });
+            updateWaterDisplay();
+        }
+
+        function updateWaterDisplay() {
+            // 更新飲水頁面顯示
+            document.getElementById('current-water').textContent = todayWaterIntake;
+            document.getElementById('goal-water').textContent = userGoals.water;
+            
+            // 更新進度條和圓形圖
+            const percentage = Math.min((todayWaterIntake / userGoals.water) * 100, 100);
+            document.getElementById('water-percentage').textContent = Math.round(percentage) + '%';
+            document.getElementById('water-wave').style.height = percentage + '%';
+            
+            // 更新 Dashboard 進度條
+            updateBar('water', todayWaterIntake, userGoals.water);
+        }
+
+        async function addWater(amount) {
+            await submitWater(amount);
+        }
+
+        async function submitCustomWater() {
+            const input = document.getElementById('custom-water-amount');
+            const amount = parseInt(input.value);
+            
+            if (!amount || amount <= 0) {
+                alert("請輸入有效的毫升數");
+                return;
+            }
+            
+            if (amount > 5000) {
+                alert("單次飲水量不宜超過 5000ml");
+                return;
+            }
+            
+            await submitWater(amount);
+            input.value = ''; // 清空輸入框
+        }
+
+        async function submitWater(amount) {
+            const today = new Date().toISOString().split('T')[0];
+
+            const { error } = await supabase
+                .from('water_records')
+                .insert([
+                    { 
+                        amount: amount,
+                        date: today
+                    }
+                ]);
+
+            if (error) {
+                console.error('添加飲水記錄錯誤:', error);
+                alert("記錄添加失敗，請重試");
+                return;
+            }
+
+            alert(`已記錄 ${amount} ml 飲水！`);
+            await fetchWaterRecords(); // 重新載入記錄
+        }
+
+        function renderWaterHistory() {
+            const container = document.getElementById('water-history');
+            container.innerHTML = '';
+
+            if (waterRecords.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">尚無記錄</p>';
+                return;
+            }
+
+            const list = document.createElement('ul');
+            list.className = 'water-history-list';
+
+            waterRecords.forEach(record => {
+                const li = document.createElement('li');
+                const time = new Date(record.created_at).toLocaleTimeString('zh-TW', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                
+                li.innerHTML = `
+                    <span><i class="fas fa-glass-water"></i> ${record.amount} ml</span>
+                    <span class="water-time">${time}</span>
+                `;
+                list.appendChild(li);
+            });
+
+            container.appendChild(list);
+        }
+
+        async function resetWaterDay() {
+            if (!confirm("確定要清空今日的所有飲水記錄嗎？此操作無法復原！")) {
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            const { error } = await supabase
+                .from('water_records')
+                .delete()
+                .eq('date', today);
+
+            if (error) {
+                console.error('重置飲水記錄錯誤:', error);
+                alert("重置失敗，請重試");
+                return;
+            }
+
+            alert('今日飲水記錄已重置！');
+            await fetchWaterRecords();
+        }
+
+        function updateWaterGoal() {
+            const newGoal = parseInt(document.getElementById('water-goal').value);
+            
+            if (!newGoal || newGoal < 500 || newGoal > 10000) {
+                alert("請輸入有效的目標值 (500-10000ml)");
+                return;
+            }
+
+            userGoals.water = newGoal;
+            localStorage.setItem('userGoals', JSON.stringify(userGoals));
+            alert(`飲水目標已更新為 ${newGoal} ml`);
+            updateWaterDisplay();
+        }
+
+        // ---------------------------------------------------------
+        // 8. 進度條更新函數
+        // ---------------------------------------------------------
         function updateProgressBars() {
             // 更新 Dashboard 的文字與進度條
             updateBar('cal', todayIntake.calories, userGoals.calories);
             updateBar('prot', todayIntake.protein, userGoals.protein);
             updateBar('carb', todayIntake.carbs, userGoals.carbs);
             updateBar('fat', todayIntake.fat, userGoals.fat);
+            updateBar('water', todayWaterIntake, userGoals.water);
         }
 
         function updateBar(type, current, target) {
+            if (!target) target = 1; // 避免除以零
             const percentage = Math.min((current / target) * 100, 100);
             document.getElementById(`${type}-display`).innerText = `${Math.round(current)} / ${target}`;
             document.getElementById(`${type}-bar`).style.width = `${percentage}%`;
