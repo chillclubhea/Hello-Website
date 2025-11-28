@@ -494,19 +494,20 @@
         let userProfile = null;
 
         // --- 初始化 ---
+         // --- 初始化 ---
         document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM 已加載，設置事件監聽器...');
-    
-    // 先處理認證回調
-    handleAuthCallback();
-    
-    // 然後設置其他功能
-    setupEventListeners();
-    checkSession();
-    startClock();
-});
-        {
-            console.log('頁面載入完成');
+            console.log('DOM 已加載，設置事件監聽器...');
+            
+            // 先處理認證回調
+            handleAuthCallback();
+                    // --- 事件監聽器設置函數 ---
+        function setupEventListeners() {
+            console.log('設置事件監聽器...');
+            // 這裡可以添加其他事件監聽器
+        }
+            
+            // 然後設置其他功能
+            setupEventListeners();
             checkSession();
             startClock();
             
@@ -667,7 +668,7 @@ async function handleAuthCallback() {
         data: {
             daily_goal: goal
         },
-        emailRedirectTo: 'https://chillclubhea.github.io//Hello-Website/auth-callback.html''
+        emailRedirectTo: 'https://chillclubhea.github.io/Hello-Website/auth-callback.html''
                 });
 
                 if (error) {
@@ -1031,6 +1032,18 @@ async function handleAuthCallback() {
                     button.textContent = button.dataset.originalText;
                     delete button.dataset.originalText;
                 }
+            }
+        }
+                // --- Toast 通知函數 ---
+        function showToast(message, type = 'info') {
+            console.log(`Toast [${type}]:`, message);
+            // 簡單的 alert 作為臨時方案
+            if (type === 'error') {
+                alert('錯誤: ' + message);
+            } else if (type === 'success') {
+                alert('成功: ' + message);
+            } else {
+                alert('信息: ' + message);
             }
         }
     </script>
