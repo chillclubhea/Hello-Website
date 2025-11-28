@@ -1,257 +1,627 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>每日飲水記錄器 - 會員版</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- 引入 Supabase SDK -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全方位體重管理中心</title>
+    <!-- 引入 Chart.js 用於繪圖 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* 樣式設定 (保持美觀與響應式) */
-        :root { --primary: #3498db; --bg: #f4f7f6; --white: #fff; --text: #333; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .container { background: var(--white); width: 100%; max-width: 400px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; position: relative; }
-        
-        /* 登入/註冊畫面 */
-        .auth-box { text-align: center; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; color: #666; font-size: 0.9rem; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: #2980b9; }
-        .link { color: var(--primary); cursor: pointer; margin-top: 15px; display: block; font-size: 0.9rem; }
-        .error { color: #e74c3c; font-size: 0.9rem; margin-bottom: 10px; min-height: 20px; }
+        :root {
+            --primary: #4F46E5; /* 靛藍色 */
+            --secondary: #10B981; /* 翠綠色 */
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-light: #6B7280;
+            --danger: #EF4444;
+        }
 
-        /* 主應用畫面 */
-        #app-screen { display: none; }
-        header { text-align: center; margin-bottom: 20px; position: relative; }
-        .logout-btn { position: absolute; top: -10px; right: -10px; background: none; border: none; color: #999; cursor: pointer; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); padding-bottom: 80px; }
+
+        /* 導覽列 */
+        nav {
+            background: var(--primary);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-title { color: white; font-weight: 700; font-size: 1.2rem; }
+        .nav-links button {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            margin-left: 15px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .nav-links button.active { color: white; border-bottom: 2px solid white; }
+
+        /* 主要容器 */
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+
+        /* 卡片樣式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { font-size: 1.25rem; margin-bottom: 15px; color: var(--primary); border-left: 4px solid var(--primary); padding-left: 10px; }
         
-        .progress-circle { width: 160px; height: 160px; background: #e0f7fa; border-radius: 50%; margin: 0 auto 20px; position: relative; overflow: hidden; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(52,152,219,0.2); display: flex; justify-content: center; align-items: center; }
-        .wave { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--primary); transition: height 0.5s; opacity: 0.8; z-index: 1; }
-        .percentage { position: relative; z-index: 2; font-size: 2.5rem; font-weight: bold; }
+        /* 表單元素 */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-light); }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover { background-color: #4338ca; }
+        .btn-danger { background-color: var(--danger); margin-top: 5px; font-size: 0.8rem; padding: 5px 10px; width: auto;}
+
+        /* 頁面切換邏輯 */
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+
+        /* Dashboard 儀表板 */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: #EEF2FF; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 0.85rem; color: var(--text-light); }
+
+        /* 飲食紀錄列表 */
+        .food-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .food-info div { font-size: 0.85rem; color: var(--text-light); }
         
-        .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .btn-add { background: #e3f2fd; color: var(--primary); }
-        .history-list { list-style: none; padding: 0; margin-top: 20px; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; }
-        .history-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem; }
-        .loading { opacity: 0.5; pointer-events: none; }
+        /* 營養條 */
+        .progress-container { margin-bottom: 10px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
+        .progress-bar-bg { background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--secondary); width: 0%; transition: width 0.5s; }
+
+        /* 運動計畫 */
+        .workout-plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .workout-card { border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+        .workout-img { width: 100%; height: 150px; background-color: #ddd; display: flex; align-items: center; justify-content: center; color: #666; }
+        .workout-content { padding: 15px; }
+        .workout-title { font-weight: bold; margin-bottom: 5px; }
+
+        /* RWD */
+        @media (max-width: 600px) {
+            .nav-links button { margin-left: 8px; font-size: 0.85rem; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- 1. 登入區塊 -->
-    <div id="auth-screen" class="auth-box">
-        <h2 id="auth-title">會員登入</h2>
-        <div class="input-group">
-            <label>電子郵件</label>
-            <input type="email" id="email" placeholder="name@example.com">
+    <nav>
+        <div class="nav-container">
+            <div class="nav-title">HealthTrack</div>
+            <div class="nav-links">
+                <button onclick="showPage('dashboard')" class="active" id="btn-dashboard">總覽</button>
+                <button onclick="showPage('calculator')" id="btn-calculator">計算器</button>
+                <button onclick="showPage('food')" id="btn-food">飲食</button>
+                <button onclick="showPage('workout')" id="btn-workout">運動</button>
+            </div>
         </div>
-        <div class="input-group">
-            <label>密碼</label>
-            <input type="password" id="password" placeholder="至少 6 位數">
+    </nav>
+
+    <div class="container">
+
+        <!-- 1. 總覽與體重圖表頁 -->
+        <div id="dashboard" class="page-section active">
+            <div class="card">
+                <h2>今日目標摘要</h2>
+                <div class="progress-container">
+                    <div class="progress-label"><span>熱量 (kcal)</span> <span id="cal-display">0 / 0</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="cal-bar"></div></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label"><span>蛋白質 (g)</span> <span id="prot-display">0 / 0</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prot-bar" style="background:#3B82F6"></div></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label"><span>碳水 (g)</span> <span id="carb-display">0 / 0</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="carb-bar" style="background:#F59E0B"></div></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-label"><span>脂肪 (g)</span> <span id="fat-display">0 / 0</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="fat-bar" style="background:#EF4444"></div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>體重紀錄</h2>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="weight-date">
+                </div>
+                <div class="form-group">
+                    <label>體重 (kg)</label>
+                    <input type="number" id="weight-input" placeholder="例如: 65.5" step="0.1">
+                </div>
+                <button class="btn" onclick="addWeight()">紀錄體重</button>
+            </div>
+
+            <div class="card">
+                <h2>體重趨勢圖</h2>
+                <canvas id="weightChart"></canvas>
+            </div>
         </div>
-        <div id="auth-msg" class="error"></div>
-        <button class="btn btn-primary" onclick="handleAuth()" id="auth-btn">登入</button>
-        <span class="link" onclick="toggleAuth()" id="auth-toggle">沒有帳號？去註冊</span>
+
+        <!-- 2. TDEE/BMR 計算器頁 -->
+        <div id="calculator" class="page-section">
+            <div class="card">
+                <h2>TDEE & BMR 計算器</h2>
+                <div class="form-group">
+                    <label>性別</label>
+                    <select id="calc-gender">
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>年齡</label>
+                    <input type="number" id="calc-age" value="25">
+                </div>
+                <div class="form-group">
+                    <label>身高 (cm)</label>
+                    <input type="number" id="calc-height" value="170">
+                </div>
+                <div class="form-group">
+                    <label>體重 (kg)</label>
+                    <input type="number" id="calc-weight" value="65">
+                </div>
+                <div class="form-group">
+                    <label>活動量</label>
+                    <select id="calc-activity">
+                        <option value="1.2">久坐 (辦公室工作，少運動)</option>
+                        <option value="1.375">輕度活動 (每週運動 1-3 天)</option>
+                        <option value="1.55">中度活動 (每週運動 3-5 天)</option>
+                        <option value="1.725">高度活動 (每週運動 6-7 天)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="calculateTDEE()">計算並設定目標</button>
+                
+                <div id="calc-result" style="margin-top: 20px; display: none; background: #F0FDF4; padding: 15px; border-radius: 8px;">
+                    <h3 style="color: var(--secondary);">計算結果</h3>
+                    <p><strong>BMR (基礎代謝):</strong> <span id="res-bmr"></span> kcal</p>
+                    <p><strong>TDEE (每日總消耗):</strong> <span id="res-tdee"></span> kcal</p>
+                    <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">*已自動將 TDEE 設為您的每日熱量目標。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 飲食紀錄頁 -->
+        <div id="food" class="page-section">
+            <div class="card">
+                <h2>新增飲食紀錄</h2>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="food-date">
+                </div>
+                <div class="form-group">
+                    <label>食物名稱</label>
+                    <input type="text" id="food-name" placeholder="例如: 雞胸肉沙拉">
+                </div>
+                <div class="stats-grid">
+                    <div class="form-group">
+                        <label>熱量 (kcal)</label>
+                        <input type="number" id="food-cal" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>蛋白質 (g)</label>
+                        <input type="number" id="food-prot" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>碳水 (g)</label>
+                        <input type="number" id="food-carb" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>脂肪 (g)</label>
+                        <input type="number" id="food-fat" placeholder="0">
+                    </div>
+                </div>
+                <button class="btn" onclick="addFood()">新增紀錄</button>
+            </div>
+
+            <div class="card">
+                <h2>今日紀錄列表</h2>
+                <div id="food-list">
+                    <!-- JS 動態生成 -->
+                    <p style="text-align: center; color: #999;">尚無紀錄</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 運動計畫頁 -->
+        <div id="workout" class="page-section">
+            <div class="card">
+                <h2>推薦運動計畫</h2>
+                <p style="margin-bottom: 15px; color: #666;">這裡提供一些基礎的運動建議，您可以根據自己的體能狀況調整。</p>
+                
+                <div class="workout-plan">
+                    <!-- 運動卡片 1 -->
+                    <div class="workout-card">
+                        <div class="workout-img" style="background: #e0e7ff; color: #4F46E5;">
+                            <!-- 這裡可以換成 <img> 標籤 -->
+                            🏃‍♂️ 有氧訓練
+                        </div>
+                        <div class="workout-content">
+                            <div class="workout-title">30分鐘 慢跑/快走</div>
+                            <p style="font-size: 0.9rem; color: #666;">適合初學者，保持心率在 130 左右，有效燃燒脂肪。</p>
+                        </div>
+                    </div>
+
+                    <!-- 運動卡片 2 -->
+                    <div class="workout-card">
+                        <div class="workout-img" style="background: #d1fae5; color: #10B981;">
+                            💪 居家肌力
+                        </div>
+                        <div class="workout-content">
+                            <div class="workout-title">徒手深蹲 3組 x 15下</div>
+                            <p style="font-size: 0.9rem; color: #666;">訓練腿部與臀部肌肉，提升基礎代謝率。</p>
+                        </div>
+                    </div>
+
+                    <!-- 運動卡片 3 -->
+                    <div class="workout-card">
+                        <div class="workout-img" style="background: #fee2e2; color: #EF4444;">
+                            🧘 伸展放鬆
+                        </div>
+                        <div class="workout-content">
+                            <div class="workout-title">睡前瑜珈 10分鐘</div>
+                            <p style="font-size: 0.9rem; color: #666;">放鬆緊繃肌肉，提升睡眠品質，幫助恢復。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- 2. 主程式區塊 -->
-    <div id="app-screen">
-        <header>
-            <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 登出</button>
-            <h3><i class="fas fa-tint"></i> 飲水記錄</h3>
-            <div style="color:#888; font-size:0.9rem" id="today-date"></div>
-        </header>
+    <script>
+        // ---------------------------------------------------------
+        // 1. Supabase 設定 (請務必替換成你自己的 URL 和 Key)
+        // ---------------------------------------------------------
+       const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzY1MTAsImV4cCI6MjA3OTg1MjUxMH0.7znE_AaNg6zESUO-RoSsyFqxCgcxjPT_pQiN557e6Nw';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        <div class="progress-circle">
-            <span class="percentage" id="percentage">0%</span>
-            <div class="wave" id="wave" style="height: 0%"></div>
-        </div>
-        
-        <div style="text-align:center; margin-bottom:20px;">
-            已喝: <strong id="current-val">0</strong> ml / 目標: <strong id="goal-val">2000</strong> ml
-        </div>
-
-        <div class="controls">
-            <button class="btn btn-add" onclick="addWater(150)">+150</button>
-            <button class="btn btn-add" onclick="addWater(250)">+250</button>
-            <button class="btn btn-add" onclick="addWater(500)">+500</button>
-        </div>
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="custom-amount" placeholder="自訂 ml" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px;">
-            <button class="btn btn-primary" style="width:auto;" onclick="addCustom()">記錄</button>
-        </div>
-
-        <ul class="history-list" id="history-list">
-            <!-- 記錄會顯示在這裡 -->
-        </ul>
-    </div>
-</div>
-
-<script>
-    // ==========================================
-    // 設定區：請在這裡填入你的 Supabase 資訊
-    // ==========================================
-    const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzY1MTAsImV4cCI6MjA3OTg1MjUxMH0.7znE_AaNg6zESUO-RoSsyFqxCgcxjPT_pQiN557e6Nw';
-    // ==========================================
-
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
-    let isLoginMode = true;
-    let user = null;
-    let dailyGoal = 2000;
-    let todayRecords = [];
-
-    // 初始化
-    init();
-
-    async function init() {
-        const { data } = await supabase.auth.getSession();
-        if (data.session) {
-            user = data.session.user;
-            showApp();
-        } else {
-            showAuth();
+        // ---------------------------------------------------------
+        // 2. 全域變數與初始化
+        // ---------------------------------------------------------
+        let weightChart;
+        // 預設目標 (如果使用者沒計算，就用這個當預設值)
+        let userGoals = {
+            calories: 2000,
+            protein: 100, // 假設值
+            carbs: 250,
+            fat: 65
+        };
+        // 從 LocalStorage 讀取目標 (如果有)
+        const savedGoals = localStorage.getItem('userGoals');
+        if (savedGoals) {
+            userGoals = JSON.parse(savedGoals);
         }
-    }
 
-    // --- 畫面切換邏輯 ---
-    function showAuth() {
-        document.getElementById('auth-screen').style.display = 'block';
-        document.getElementById('app-screen').style.display = 'none';
-    }
-    
-    async function showApp() {
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app-screen').style.display = 'block';
-        
-        const dateOpts = { month: 'long', day: 'numeric', weekday: 'long' };
-        document.getElementById('today-date').textContent = new Date().toLocaleDateString('zh-TW', dateOpts);
-        
-        await loadData();
-    }
+        // 初始化日期欄位為今天
+        document.getElementById('weight-date').valueAsDate = new Date();
+        document.getElementById('food-date').valueAsDate = new Date();
 
-    function toggleAuth() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').textContent = isLoginMode ? '會員登入' : '註冊帳號';
-        document.getElementById('auth-btn').textContent = isLoginMode ? '登入' : '註冊';
-        document.getElementById('auth-toggle').textContent = isLoginMode ? '沒有帳號？去註冊' : '已有帳號？去登入';
-        document.getElementById('auth-msg').textContent = '';
-    }
+        // 頁面載入時執行
+        window.onload = async function() {
+            await fetchWeights();
+            await fetchFoods();
+            updateProgressBars();
+        };
 
-    // --- 認證邏輯 ---
-    async function handleAuth() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const msg = document.getElementById('auth-msg');
-        const btn = document.getElementById('auth-btn');
+        // ---------------------------------------------------------
+        // 3. 頁面切換邏輯
+        // ---------------------------------------------------------
+        function showPage(pageId) {
+            // 隱藏所有頁面
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            // 顯示選中頁面
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.nav-links button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + pageId).classList.add('active');
 
-        if (!email || !password) return msg.textContent = '請填寫完整';
-        
-        btn.classList.add('loading');
-        msg.textContent = '';
-
-        try {
-            if (isLoginMode) {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                user = data.user;
-                showApp();
-            } else {
-                const { data, error } = await supabase.auth.signUp({ email, password });
-                if (error) throw error;
-                alert('註冊成功！請直接登入 (如果 Supabase 開啟了信箱驗證，請先去收信)');
-                toggleAuth(); // 切換回登入頁
+            // 如果切回 Dashboard，重新整理數據
+            if(pageId === 'dashboard') {
+                fetchFoods(); // 重新計算今日攝取
             }
-        } catch (err) {
-            msg.textContent = err.message.includes('Invalid login') ? '帳號或密碼錯誤' : err.message;
-        } finally {
-            btn.classList.remove('loading');
         }
-    }
 
-    async function logout() {
-        await supabase.auth.signOut();
-        window.location.reload();
-    }
+        // ---------------------------------------------------------
+        // 4. 計算器邏輯 (TDEE & BMR)
+        // ---------------------------------------------------------
+        function calculateTDEE() {
+            const gender = document.getElementById('calc-gender').value;
+            const age = parseFloat(document.getElementById('calc-age').value);
+            const height = parseFloat(document.getElementById('calc-height').value);
+            const weight = parseFloat(document.getElementById('calc-weight').value);
+            const activity = parseFloat(document.getElementById('calc-activity').value);
 
-    // --- 資料存取邏輯 ---
-    async function loadData() {
-        // 1. 讀取目標
-        const { data: profile } = await supabase.from('profiles').select('daily_goal').eq('id', user.id).single();
-        if (profile) dailyGoal = profile.daily_goal;
+            if (!age || !height || !weight) {
+                alert("請填寫完整資訊");
+                return;
+            }
 
-        // 2. 讀取今日記錄
-        const today = new Date().toISOString().split('T')[0];
-        const { data: records, error } = await supabase
-            .from('water_records')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('date', today)
-            .order('created_at', { ascending: false });
+            // Mifflin-St Jeor 公式
+            let bmr = (10 * weight) + (6.25 * height) - (5 * age);
+            if (gender === 'male') {
+                bmr += 5;
+            } else {
+                bmr -= 161;
+            }
 
-        if (!error) {
-            todayRecords = records;
-            updateUI();
+            const tdee = Math.round(bmr * activity);
+            bmr = Math.round(bmr);
+
+            // 顯示結果
+            document.getElementById('res-bmr').innerText = bmr;
+            document.getElementById('res-tdee').innerText = tdee;
+            document.getElementById('calc-result').style.display = 'block';
+
+            // 自動設定目標 (簡單比例：蛋白質 20%, 脂肪 30%, 碳水 50%)
+            userGoals.calories = tdee;
+            userGoals.protein = Math.round((tdee * 0.2) / 4);
+            userGoals.fat = Math.round((tdee * 0.3) / 9);
+            userGoals.carbs = Math.round((tdee * 0.5) / 4);
+
+            // 存入 LocalStorage
+            localStorage.setItem('userGoals', JSON.stringify(userGoals));
+            
+            alert(`計算完成！已將每日目標設為 ${tdee} kcal`);
+            updateProgressBars(); // 更新 Dashboard 顯示
         }
-    }
 
-    async function addWater(amount) {
-        const today = new Date().toISOString().split('T')[0];
-        const { error } = await supabase.from('water_records').insert([
-            { user_id: user.id, amount: amount, date: today }
-        ]);
+        // ---------------------------------------------------------
+        // 5. 體重功能 (Supabase)
+        // ---------------------------------------------------------
+        async function addWeight() {
+            const date = document.getElementById('weight-date').value;
+            const weight = document.getElementById('weight-input').value;
 
-        if (error) {
-            alert('記錄失敗，請檢查網路');
-        } else {
-            await loadData(); // 重新讀取並更新畫面
+            if (!date || !weight) {
+                alert('請輸入日期和體重');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('weight_logs')
+                .insert({ record_date: date, weight: parseFloat(weight) });
+
+            if (error) {
+                console.error('Error:', error);
+                alert('儲存失敗: ' + error.message);
+            } else {
+                alert('體重已紀錄！');
+                fetchWeights(); // 重新整理圖表
+            }
         }
-    }
 
-    function addCustom() {
-        const val = document.getElementById('custom-amount').value;
-        if (val > 0) {
-            addWater(parseInt(val));
-            document.getElementById('custom-amount').value = '';
+        async function fetchWeights() {
+            const { data, error } = await supabase
+                .from('weight_logs')
+                .select('*')
+                .order('record_date', { ascending: true });
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            renderChart(data);
         }
-    }
 
-    async function deleteRecord(id) {
-        if (!confirm('確定刪除？')) return;
-        await supabase.from('water_records').delete().eq('id', id);
-        await loadData();
-    }
+        function renderChart(data) {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            const labels = data.map(d => d.record_date);
+            const weights = data.map(d => d.weight);
 
-    // --- UI 更新 ---
-    function updateUI() {
-        const total = todayRecords.reduce((sum, r) => sum + r.amount, 0);
-        document.getElementById('current-val').textContent = total;
-        document.getElementById('goal-val').textContent = dailyGoal;
+            if (weightChart) {
+                weightChart.destroy();
+            }
 
-        let pct = Math.round((total / dailyGoal) * 100);
-        document.getElementById('percentage').textContent = pct + '%';
-        document.getElementById('wave').style.height = Math.min(pct, 100) + '%';
+            weightChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '體重 (kg)',
+                        data: weights,
+                        borderColor: '#4F46E5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
 
-        const list = document.getElementById('history-list');
-        list.innerHTML = '';
-        todayRecords.forEach(r => {
-            const time = new Date(r.created_at).toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
-            list.innerHTML += `
-                <li>
-                    <span><i class="fas fa-glass-water" style="color:#3498db"></i> ${r.amount} ml</span>
-                    <span>
-                        <span style="color:#999; font-size:0.8rem; margin-right:10px">${time}</span>
-                        <i class="fas fa-trash" style="color:#e74c3c; cursor:pointer" onclick="deleteRecord(${r.id})"></i>
-                    </span>
-                </li>`;
-        });
-    }
-</script>
+        // ---------------------------------------------------------
+        // 6. 飲食功能 (Supabase)
+        // ---------------------------------------------------------
+        let todayIntake = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+        async function addFood() {
+            const date = document.getElementById('food-date').value;
+            const name = document.getElementById('food-name').value;
+            const cal = parseFloat(document.getElementById('food-cal').value) || 0;
+            const prot = parseFloat(document.getElementById('food-prot').value) || 0;
+            const carb = parseFloat(document.getElementById('food-carb').value) || 0;
+            const fat = parseFloat(document.getElementById('food-fat').value) || 0;
+
+            if (!name) {
+                alert('請輸入食物名稱');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('food_logs')
+                .insert({ 
+                    date: date, 
+                    food_name: name, 
+                    calories: cal, 
+                    protein: prot, 
+                    carbs: carb, 
+                    fat: fat 
+                });
+
+            if (error) {
+                alert('儲存失敗: ' + error.message);
+            } else {
+                alert('飲食已紀錄！');
+                // 清空輸入框
+                document.getElementById('food-name').value = '';
+                document.getElementById('food-cal').value = '';
+                document.getElementById('food-prot').value = '';
+                document.getElementById('food-carb').value = '';
+                document.getElementById('food-fat').value = '';
+                
+                fetchFoods(); // 更新列表與進度條
+            }
+        }
+
+        async function fetchFoods() {
+            // 這裡我們只抓取「今天」的資料來顯示在 Dashboard 和 列表
+            // 實際應用可能需要讓使用者選擇日期，這裡簡化為抓取 input date 的日期
+            const targetDate = document.getElementById('food-date').value;
+
+            const { data, error } = await supabase
+                .from('food_logs')
+                .select('*')
+                .eq('date', targetDate)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            renderFoodList(data);
+            calculateTodayIntake(data);
+        }
+
+        function renderFoodList(data) {
+            const list = document.getElementById('food-list');
+            list.innerHTML = '';
+
+            if (data.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #999;">該日期尚無紀錄</p>';
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'food-item';
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight:bold;">${item.food_name}</div>
+                        <div class="food-info">
+                            ${item.calories} kcal | P: ${item.protein}g | C: ${item.carbs}g | F: ${item.fat}g
+                        </div>
+                    </div>
+                    <button class="btn-danger" onclick="deleteFood(${item.id})">刪除</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        async function deleteFood(id) {
+            if(!confirm('確定要刪除這筆紀錄嗎？')) return;
+
+            const { error } = await supabase
+                .from('food_logs')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert('刪除失敗');
+            } else {
+                fetchFoods();
+            }
+        }
+
+        function calculateTodayIntake(data) {
+            // 重置
+            todayIntake = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+            data.forEach(item => {
+                todayIntake.calories += item.calories || 0;
+                todayIntake.protein += item.protein || 0;
+                todayIntake.carbs += item.carbs || 0;
+                todayIntake.fat += item.fat || 0;
+            });
+
+            updateProgressBars();
+        }
+
+        function updateProgressBars() {
+            // 更新 Dashboard 的文字與進度條
+            updateBar('cal', todayIntake.calories, userGoals.calories);
+            updateBar('prot', todayIntake.protein, userGoals.protein);
+            updateBar('carb', todayIntake.carbs, userGoals.carbs);
+            updateBar('fat', todayIntake.fat, userGoals.fat);
+        }
+
+        function updateBar(type, current, target) {
+            const percentage = Math.min((current / target) * 100, 100);
+            document.getElementById(`${type}-display`).innerText = `${Math.round(current)} / ${target}`;
+            document.getElementById(`${type}-bar`).style.width = `${percentage}%`;
+        }
+
+        // 當飲食頁面的日期改變時，重新抓取該日期的資料
+        document.getElementById('food-date').addEventListener('change', fetchFoods);
+
+    </script>
 </body>
 </html>
