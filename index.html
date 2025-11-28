@@ -1782,7 +1782,7 @@
             chatWindow.scrollTop = chatWindow.scrollHeight; // 滾動到底部
         }
 
-      async function submitChatQuestion() {
+        async function submitChatQuestion() {
             if (!currentUser) {
                 alert('請先登入');
                 return;
@@ -1806,51 +1806,11 @@
             document.getElementById('chat-window').appendChild(loadingMsg);
             document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
 
-            // 3. 設置按鈕載入狀態
+            // 3. 更新 chatHistory (用於模擬對話連貫性)
+            chatHistory.push({ role: "user", content: question });
+            
+            // 設置按鈕載入狀態
             setLoadingState('chat-btn', true);
-
-            try {
-                // *** 關鍵修正：安全獲取 user_id ***
-                const session = await supabase.auth.getSession();
-                const user_id = session.data.session?.user?.id; // 直接從 session 中獲取 ID
-
-                if (!user_id) {
-                    throw new Error('用戶 ID 無效，請嘗試重新登入。');
-                }
-
-                const response = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${session.data.session?.access_token}`,
-                    },
-                    body: JSON.stringify({ 
-                        user_id: user_id, // 傳遞用戶 ID
-                        message: question // 傳遞單一訊息字串
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({})); 
-                    const errorText = errorData.error || `狀態碼: ${response.status}`;
-                    throw new Error(`API 呼叫失敗，狀態碼: ${response.status}。詳情: ${errorText}`);
-                }
-
-                const data = await response.json();
-                const aiResponse = data.response || "抱歉，智慧助理暫時無法回應您的問題。";
-                
-                // 4. 移除載入訊息並顯示 AI 回覆
-                loadingMsg.remove();
-                appendMessage('ai', aiResponse);
-
-            } catch (error) {
-                console.error('AI 問答錯誤:', error);
-                loadingMsg.remove();
-                showMessage(errorMsg, `連線失敗或後端服務發生錯誤：${error.message}`, 'error');
-            } finally {
-                setLoadingState('chat-btn', false, '送出');
-            }
-        }
 
             try {
                 // 4. 呼叫 Edge Function (假設部署在 /ask-ai)
