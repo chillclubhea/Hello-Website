@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>驗證成功 - 飲水記錄器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        .success { color: #2ecc71; font-size: 2rem; }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success">✓</div>
+        <h1>驗證成功！</h1>
+        <p>您的電子郵件已成功驗證。</p>
+        <p>現在您可以返回應用程式並登入。</p>
+        <a href="https://chillclubhea.github.io/Hello-Website/" class="btn">
+            返回飲水記錄器
+        </a>
+    </div>
+
+    <script>
+        // 5秒後自動跳轉
+        setTimeout(() => {
+            window.location.href = 'https://chillclubhea.github.io/Hello-Website/';
+        }, 5000);
+    </script>
+</body>
+</html>
