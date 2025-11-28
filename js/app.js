@@ -154,3 +154,50 @@ async function handleLogin() {
     currentUser = data.user;
     showApp();
 }
+// --- 認證回調處理 ---
+async function handleAuthCallback() {
+    // 檢查 URL 中是否有認證參數
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+
+    console.log('認證回調參數:', { accessToken, refreshToken, error, errorDescription });
+
+    if (error) {
+        console.error('認證錯誤:', errorDescription);
+        showToast(`認證失敗: ${errorDescription}`, 'error');
+        // 清理 URL 參數
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
+
+    if (accessToken && refreshToken) {
+        try {
+            console.log('處理 OAuth 回調...');
+            const { data, error } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+            });
+
+            if (error) {
+                console.error('設置會話錯誤:', error);
+                showToast('登入失敗，請重試', 'error');
+            } else {
+                console.log('OAuth 登入成功:', data);
+                currentUser = data.user;
+                await loadUserData();
+                showApp();
+                showToast('登入成功！', 'success');
+            }
+
+            // 清理 URL 參數
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+        } catch (err) {
+            console.error('OAuth 回調處理錯誤:', err);
+            showToast('認證處理失敗', 'error');
+        }
+    }
+}
