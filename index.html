@@ -604,8 +604,13 @@
                 
                 // 註冊用戶
                 const { data, error } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
+    email: email,
+    password: password,
+    options: {
+        data: {
+            daily_goal: goal
+        },
+        emailRedirectTo: 'https://chillclubhea.github.io//Hello-Website'
                 });
 
                 if (error) {
