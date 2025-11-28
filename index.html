@@ -196,6 +196,20 @@
         /* 主要容器 */
         .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
 
+        /* 頁面切換核心 CSS: 每個頁面區塊預設隱藏，只有 active 顯示 */
+        .page-section { 
+            display: none; 
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .page-section.active { 
+            display: block; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         /* 卡片樣式 */
         .card {
             background: var(--card-bg);
@@ -318,7 +332,6 @@
             font-size: 0.8rem;
         }
 
-        /* ----------------------- 新增功能樣式 ----------------------- */
         /* 照片追蹤樣式 */
         .photo-grid {
             display: grid;
@@ -420,7 +433,7 @@
 
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
-            <h1 class="auth-title"><i class="fas fa-heartbeat"></i> HealthTrack</h1>
+            <h1 class="auth-title"><i class="fas fa-heartbeat"></i> 觀塘ONE2FIT</h1>
             
             <div class="auth-tabs">
                 <button class="auth-tab active" onclick="showAuthForm('login')">登入</button>
@@ -471,7 +484,7 @@
     <div id="app-screen" class="app-container">
         <nav>
             <div class="nav-container">
-                <div class="nav-title">HealthTrack</div>
+                <div class="nav-title">觀塘ONE2FIT</div>
                 <div class="nav-user">
                     <i class="fas fa-user-circle"></i>
                     <span id="user-email">用戶</span>
@@ -1078,7 +1091,7 @@
         }
 
         // ---------------------------------------------------------
-        // 6. 頁面切換與UI功能 (已改良)
+        // 6. 頁面切換與UI功能 (核心 SPA 邏輯)
         // ---------------------------------------------------------
         function showPage(pageId) {
             // 隱藏所有頁面
@@ -1571,7 +1584,7 @@
         }
         
         // ---------------------------------------------------------
-        // 11. 照片追蹤功能 (新增)
+        // 11. 照片追蹤功能
         // ---------------------------------------------------------
         
         async function uploadProgressPhoto() {
@@ -1612,14 +1625,14 @@
                     throw uploadError;
                 }
 
-                // 3. 取得公開 URL
+                // 3. 取得公開 URL (注意：由於 Storage RLS，這裡取得的 URL 仍然受 Policy 保護)
                 const { data: publicUrlData } = supabase.storage
                     .from('progress_photos')
                     .getPublicUrl(filePath);
                 
                 const photoUrl = publicUrlData.publicUrl;
 
-                // 4. 寫入資料庫 (假設資料表為 progress_logs)
+                // 4. 寫入資料庫 (資料表 progress_logs)
                 const { error: dbError } = await supabase
                     .from('progress_logs') 
                     .insert({
@@ -1660,7 +1673,6 @@
 
             if (error) {
                 console.error('載入照片紀錄錯誤:', error);
-                // 增加提示，引導用戶檢查資料表
                 container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--danger);">載入錯誤：請檢查資料表 `progress_logs` 是否已建立。</p>';
                 return;
             }
@@ -1697,7 +1709,7 @@
         }
 
         // ---------------------------------------------------------
-        // 12. 即時 AI 問答功能 (新增)
+        // 12. 即時 AI 問答功能
         // ---------------------------------------------------------
         
         function appendMessage(role, content) {
