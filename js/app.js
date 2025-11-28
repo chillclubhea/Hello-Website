@@ -1,73 +1,47 @@
-// --- Supabase 初始化 ---
-const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NDU2MDksImV4cCI6MjA1MDIyMTYwOX0.4O4K0t8s-Bd5w2P0NlH1lHqH8n8eL9vY8Q6Qy9qJ3kA';
+// 確保所有函數都在全局作用域
+window.waterTrackerApp = {
+    supabase: null,
+    currentUser: null,
+    userProfile: null,
+    timerInterval: null
+};
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 初始化 Supabase
+function initializeSupabase() {
+    try {
+        const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ2NDU2MDksImV4cCI6MjA1MDIyMTYwOX0.4O4K0t8s-Bd5w2P0NlH1lHqH8n8eL9vY8Q6Qy9qJ3kA';
+        
+        window.waterTrackerApp.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase 初始化成功');
+    } catch (error) {
+        console.error('Supabase 初始化失敗:', error);
+    }
+}
 
-// --- 狀態變數 ---
-let currentUser = null;
-let currentDate = new Date().toDateString();
-let timerInterval = null;
-let userProfile = null;
-
-// --- DOM 元素 ---
-const loginScreen = document.getElementById('login-screen');
-const registerScreen = document.getElementById('register-screen');
-const appScreen = document.getElementById('app-screen');
-const loginBtn = document.getElementById('login-btn');
-const registerBtn = document.getElementById('register-btn');
-const logoutBtn = document.getElementById('logout-btn');
-const showRegister = document.getElementById('show-register');
-const showLogin = document.getElementById('show-login');
-const submitWaterBtn = document.getElementById('submit-water');
-const resetDayBtn = document.getElementById('reset-day');
-const quickButtons = document.querySelectorAll('.add-btn');
-
-// --- 初始化 ---
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('頁面載入完成');
-    setupEventListeners();
-    checkSession();
+// 初始化應用
+function initializeApp() {
+    console.log('初始化應用程式');
+    initializeSupabase();
     startClock();
-});
-
-// --- 事件監聽器設置 ---
-function setupEventListeners() {
-    // 登入相關
-    loginBtn.addEventListener('click', handleLogin);
-    registerBtn.addEventListener('click', handleRegister);
-    logoutBtn.addEventListener('click', handleLogout);
-    showRegister.addEventListener('click', showRegisterScreen);
-    showLogin.addEventListener('click', showLoginScreen);
+    checkSession();
     
-    // 飲水記錄相關
-    submitWaterBtn.addEventListener('click', submitWater);
-    resetDayBtn.addEventListener('click', resetDay);
-    
-    // 快速按鈕
-    quickButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const amount = this.getAttribute('data-amount');
-            fillAmount(parseInt(amount));
-        });
-    });
-    
-    // Enter 鍵支持
-    document.getElementById('reg-pass')?.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') handleRegister();
-    });
+    // 添加 Enter 鍵支持
     document.getElementById('login-pass')?.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') handleLogin();
+        if (e.key === 'Enter') window.handleLogin();
+    });
+    document.getElementById('reg-pass')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') window.handleRegister();
     });
     document.getElementById('custom-amount')?.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') submitWater();
+        if (e.key === 'Enter') window.submitWater();
     });
 }
 
-// --- 時鐘功能 ---
+// 時鐘功能
 function startClock() {
     updateTime();
-    timerInterval = setInterval(updateTime, 1000);
+    window.waterTrackerApp.timerInterval = setInterval(updateTime, 1000);
 }
 
 function updateTime() {
@@ -78,60 +52,34 @@ function updateTime() {
     document.getElementById('real-time-clock').textContent = timeString;
 }
 
-// --- 畫面切換 ---
-function showLoginScreen() {
+// 畫面切換功能
+window.showLoginScreen = function() {
     console.log('顯示登入畫面');
-    loginScreen.classList.remove('hidden');
-    registerScreen.classList.add('hidden');
-    appScreen.style.display = 'none';
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('register-screen').classList.add('hidden');
+    document.getElementById('app-screen').style.display = 'none';
     document.getElementById('login-error').textContent = '';
     document.getElementById('login-success').textContent = '';
 }
 
-function showRegisterScreen() {
+window.showRegisterScreen = function() {
     console.log('顯示註冊畫面');
-    loginScreen.classList.add('hidden');
-    registerScreen.classList.remove('hidden');
-    appScreen.style.display = 'none';
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('register-screen').classList.remove('hidden');
+    document.getElementById('app-screen').style.display = 'none';
     document.getElementById('reg-error').textContent = '';
     document.getElementById('reg-success').textContent = '';
 }
 
-function showAppScreen() {
+window.showAppScreen = function() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('register-screen').classList.add('hidden');
-    appScreen.style.display = 'block';
+    document.getElementById('app-screen').style.display = 'block';
     console.log('顯示主應用畫面');
 }
 
-// --- 認證系統 ---
-async function checkSession() {
-    try {
-        console.log('檢查登入狀態...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-            console.error('檢查 session 錯誤:', error);
-            showLoginScreen();
-            return;
-        }
-        
-        if (session && session.user) {
-            console.log('用戶已登入:', session.user.email);
-            currentUser = session.user;
-            await loadUserData();
-            showAppScreen();
-        } else {
-            console.log('沒有找到登入 session');
-            showLoginScreen();
-        }
-    } catch (err) {
-        console.error('檢查 session 異常:', err);
-        showLoginScreen();
-    }
-}
-
-async function handleRegister() {
+// 認證功能
+window.handleRegister = async function() {
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-pass').value.trim();
     const goal = parseInt(document.getElementById('reg-goal').value) || 2000;
@@ -152,13 +100,13 @@ async function handleRegister() {
     }
 
     // 顯示加載狀態
+    const registerBtn = document.querySelector('#register-screen .btn-block');
     setLoadingState(registerBtn, true, '註冊中...');
 
     try {
         console.log('開始註冊:', email);
         
-        // 直接註冊
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await window.waterTrackerApp.supabase.auth.signUp({
             email: email,
             password: password
         });
@@ -170,18 +118,16 @@ async function handleRegister() {
             return;
         }
 
-        console.log('註冊成功:', data);
+        console.log('註冊成功');
 
         // 創建用戶資料
         if (data.user) {
-            const { error: profileError } = await supabase
+            const { error: profileError } = await window.waterTrackerApp.supabase
                 .from('user_profiles')
-                .insert([
-                    { 
-                        user_id: data.user.id, 
-                        daily_goal: goal
-                    }
-                ]);
+                .insert([{ 
+                    user_id: data.user.id, 
+                    daily_goal: goal
+                }]);
 
             if (profileError && !profileError.message.includes('duplicate key')) {
                 console.error('創建用戶資料錯誤:', profileError);
@@ -189,7 +135,7 @@ async function handleRegister() {
         }
 
         // 嘗試直接登入
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        const { data: loginData, error: loginError } = await window.waterTrackerApp.supabase.auth.signInWithPassword({
             email: email,
             password: password,
         });
@@ -197,15 +143,15 @@ async function handleRegister() {
         if (loginError) {
             successMsg.textContent = "註冊成功！請手動登入。";
             setTimeout(() => {
-                showLoginScreen();
+                window.showLoginScreen();
                 document.getElementById('login-email').value = email;
                 document.getElementById('login-success').textContent = "請使用您的帳號密碼登入";
             }, 2000);
         } else {
             console.log('自動登入成功');
-            currentUser = loginData.user;
+            window.waterTrackerApp.currentUser = loginData.user;
             await loadUserData();
-            showAppScreen();
+            window.showAppScreen();
         }
         
     } catch (err) {
@@ -216,7 +162,7 @@ async function handleRegister() {
     }
 }
 
-async function handleLogin() {
+window.handleLogin = async function() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-pass').value.trim();
     const errorMsg = document.getElementById('login-error');
@@ -231,17 +177,18 @@ async function handleLogin() {
     }
 
     // 顯示加載狀態
+    const loginBtn = document.querySelector('#login-screen .btn-block');
     setLoadingState(loginBtn, true, '登入中...');
 
     try {
         console.log('嘗試登入:', email);
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await window.waterTrackerApp.supabase.auth.signInWithPassword({
             email: email,
             password: password,
         });
 
         if (error) {
-            console.error('登入錯誤詳細信息:', error);
+            console.error('登入錯誤:', error);
             
             if (error.message.includes('Invalid login credentials')) {
                 errorMsg.textContent = "電子郵件或密碼不正確";
@@ -254,10 +201,10 @@ async function handleLogin() {
             return;
         }
 
-        console.log('登入成功:', data.user.email);
-        currentUser = data.user;
+        console.log('登入成功');
+        window.waterTrackerApp.currentUser = data.user;
         await loadUserData();
-        showAppScreen();
+        window.showAppScreen();
         
     } catch (err) {
         console.error('登入過程異常:', err);
@@ -267,17 +214,17 @@ async function handleLogin() {
     }
 }
 
-async function handleLogout() {
+window.handleLogout = async function() {
     try {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await window.waterTrackerApp.supabase.auth.signOut();
         if (error) {
             console.error('登出錯誤:', error);
             alert('登出時發生錯誤');
             return;
         }
-        currentUser = null;
-        userProfile = null;
-        showLoginScreen();
+        window.waterTrackerApp.currentUser = null;
+        window.waterTrackerApp.userProfile = null;
+        window.showLoginScreen();
         console.log('登出成功');
     } catch (err) {
         console.error('登出異常:', err);
@@ -285,52 +232,34 @@ async function handleLogout() {
     }
 }
 
-// --- 應用程式主要邏輯 ---
-async function loadUserData() {
-    if (!currentUser) return;
-    
-    console.log('載入用戶資料...');
-    
+// 檢查登入狀態
+async function checkSession() {
     try {
-        // 加載用戶資料
-        const { data: profileData, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .single();
+        const { data: { session }, error } = await window.waterTrackerApp.supabase.auth.getSession();
         
-        if (profileError) {
-            console.error('載入用戶資料錯誤:', profileError);
-            userProfile = { daily_goal: 2000 };
-        } else {
-            userProfile = profileData;
-        }
-        
-        // 加載今日飲水記錄
-        const today = new Date().toISOString().split('T')[0];
-        const { data: waterData, error: waterError } = await supabase
-            .from('water_records')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('date', today)
-            .order('created_at', { ascending: false });
-        
-        if (waterError) {
-            console.error('載入飲水記錄錯誤:', waterError);
-            updateUI([], userProfile);
+        if (error) {
+            console.error('檢查 session 錯誤:', error);
+            window.showLoginScreen();
             return;
         }
         
-        // 更新UI
-        updateUI(waterData, userProfile);
-        
+        if (session && session.user) {
+            console.log('用戶已登入:', session.user.email);
+            window.waterTrackerApp.currentUser = session.user;
+            await loadUserData();
+            window.showAppScreen();
+        } else {
+            console.log('沒有找到登入 session');
+            window.showLoginScreen();
+        }
     } catch (err) {
-        console.error('載入用戶資料異常:', err);
-        updateUI([], { daily_goal: 2000 });
+        console.error('檢查 session 異常:', err);
+        window.showLoginScreen();
     }
 }
 
-function fillAmount(amount) {
+// 應用功能
+window.fillAmount = function(amount) {
     const input = document.getElementById('custom-amount');
     input.value = amount;
     input.focus();
@@ -340,8 +269,8 @@ function fillAmount(amount) {
     }, 300);
 }
 
-async function submitWater() {
-    if (!currentUser) {
+window.submitWater = async function() {
+    if (!window.waterTrackerApp.currentUser) {
         alert('請先登入');
         return;
     }
@@ -360,19 +289,18 @@ async function submitWater() {
     }
     
     // 顯示加載狀態
-    setLoadingState(submitWaterBtn, true, '提交中...');
+    const submitBtn = document.getElementById('submit-water');
+    setLoadingState(submitBtn, true, '提交中...');
     
     try {
         const today = new Date().toISOString().split('T')[0];
-        const { data, error } = await supabase
+        const { data, error } = await window.waterTrackerApp.supabase
             .from('water_records')
-            .insert([
-                { 
-                    user_id: currentUser.id, 
-                    amount: amount,
-                    date: today
-                }
-            ]);
+            .insert([{ 
+                user_id: window.waterTrackerApp.currentUser.id, 
+                amount: amount,
+                date: today
+            }]);
         
         if (error) {
             console.error('添加飲水記錄錯誤:', error);
@@ -381,36 +309,34 @@ async function submitWater() {
         }
         
         console.log('飲水記錄添加成功');
-        // 重新加載數據
         await loadUserData();
-        
-        // 清空輸入框
         input.value = '';
         
     } catch (err) {
         console.error('提交飲水記錄異常:', err);
         alert("提交過程中發生錯誤");
     } finally {
-        setLoadingState(submitWaterBtn, false, '提交記錄');
+        setLoadingState(submitBtn, false, '提交記錄');
     }
 }
 
-async function resetDay() {
-    if (!currentUser) return;
+window.resetDay = async function() {
+    if (!window.waterTrackerApp.currentUser) return;
     
     if (!confirm("確定要清空今日的所有記錄嗎？此操作無法復原！")) {
         return;
     }
     
     // 顯示加載狀態
-    setLoadingState(resetDayBtn, true, '重置中...');
+    const resetBtn = document.getElementById('reset-day');
+    setLoadingState(resetBtn, true, '重置中...');
     
     try {
         const today = new Date().toISOString().split('T')[0];
-        const { error } = await supabase
+        const { error } = await window.waterTrackerApp.supabase
             .from('water_records')
             .delete()
-            .eq('user_id', currentUser.id)
+            .eq('user_id', window.waterTrackerApp.currentUser.id)
             .eq('date', today);
         
         if (error) {
@@ -420,14 +346,55 @@ async function resetDay() {
         }
         
         console.log('重置成功');
-        // 重新加載數據
         await loadUserData();
         
     } catch (err) {
         console.error('重置異常:', err);
         alert("重置過程中發生錯誤");
     } finally {
-        setLoadingState(resetDayBtn, false, '重置今日記錄');
+        setLoadingState(resetBtn, false, '重置今日記錄');
+    }
+}
+
+// 加載用戶數據
+async function loadUserData() {
+    if (!window.waterTrackerApp.currentUser) return;
+    
+    try {
+        // 加載用戶資料
+        const { data: profileData, error: profileError } = await window.waterTrackerApp.supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('user_id', window.waterTrackerApp.currentUser.id)
+            .single();
+        
+        if (profileError) {
+            console.error('載入用戶資料錯誤:', profileError);
+            window.waterTrackerApp.userProfile = { daily_goal: 2000 };
+        } else {
+            window.waterTrackerApp.userProfile = profileData;
+        }
+        
+        // 加載今日飲水記錄
+        const today = new Date().toISOString().split('T')[0];
+        const { data: waterData, error: waterError } = await window.waterTrackerApp.supabase
+            .from('water_records')
+            .select('*')
+            .eq('user_id', window.waterTrackerApp.currentUser.id)
+            .eq('date', today)
+            .order('created_at', { ascending: false });
+        
+        if (waterError) {
+            console.error('載入飲水記錄錯誤:', waterError);
+            updateUI([], window.waterTrackerApp.userProfile);
+            return;
+        }
+        
+        updateUI(waterData, window.waterTrackerApp.userProfile);
+        
+    } catch (err) {
+        console.error('載入用戶資料異常:', err);
+        updateUI([], { daily_goal: 2000 });
     }
 }
 
@@ -435,7 +402,7 @@ function updateUI(waterData, profile) {
     if (!profile) return;
     
     // 更新用戶名
-    const username = currentUser.email.split('@')[0];
+    const username = window.waterTrackerApp.currentUser.email.split('@')[0];
     document.getElementById('display-username').textContent = username;
     document.getElementById('goal-intake').textContent = profile.daily_goal;
     
@@ -502,3 +469,6 @@ function setLoadingState(button, isLoading, text = '') {
         }
     }
 }
+
+// 頁面載入時初始化
+document.addEventListener('DOMContentLoaded', initializeApp);
