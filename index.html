@@ -226,7 +226,7 @@
         .progress-container { margin-bottom: 10px; }
         .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
         .progress-bar-bg { background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: var(--secondary); width: 0%; transition: width 0.5s; }
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.5s; } /* 移除背景色，讓 JS 設定 */
 
         /* 運動計畫 */
         .workout-plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
@@ -482,7 +482,9 @@
                     <button onclick="showPage('food')" id="btn-food">飲食</button>
                     <button onclick="showPage('water')" id="btn-water">飲水</button>
                     <button onclick="showPage('workout')" id="btn-workout">運動</button>
-                    <button onclick="showPage('photos')" id="btn-photos">照片</button> <button onclick="showPage('chatbot')" id="btn-chatbot">問答</button> <button onclick="handleLogout()" id="btn-logout"><i class="fas fa-sign-out-alt"></i> 登出</button>
+                    <button onclick="showPage('photos')" id="btn-photos">照片</button> 
+                    <button onclick="showPage('chatbot')" id="btn-chatbot">問答</button> 
+                    <button onclick="handleLogout()" id="btn-logout"><i class="fas fa-sign-out-alt"></i> 登出</button>
                 </div>
             </div>
         </nav>
@@ -494,23 +496,23 @@
                     <h2>今日目標摘要</h2>
                     <div class="progress-container">
                         <div class="progress-label"><span>熱量 (kcal)</span> <span id="cal-display">0 / 0</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="cal-bar"></div></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="cal-bar" style="background: var(--primary);"></div></div>
                     </div>
                     <div class="progress-container">
                         <div class="progress-label"><span>蛋白質 (g)</span> <span id="prot-display">0 / 0</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prot-bar" style="background:#3B82F6"></div></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="prot-bar" style="background: var(--water);"></div></div>
                     </div>
                     <div class="progress-container">
                         <div class="progress-label"><span>碳水 (g)</span> <span id="carb-display">0 / 0</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="carb-bar" style="background:#F59E0B"></div></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="carb-bar" style="background: #F59E0B;"></div></div>
                     </div>
                     <div class="progress-container">
                         <div class="progress-label"><span>脂肪 (g)</span> <span id="fat-display">0 / 0</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="fat-bar" style="background:#EF4444"></div></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="fat-bar" style="background: var(--danger);"></div></div>
                     </div>
                     <div class="progress-container">
                         <div class="progress-label"><span>飲水 (ml)</span> <span id="water-display">0 / 0</span></div>
-                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="water-bar" style="background:#3B82F6"></div></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="water-bar" style="background: var(--water);"></div></div>
                     </div>
                 </div>
 
@@ -762,6 +764,7 @@
         // ---------------------------------------------------------
         // 1. Supabase 設定 (請替換成您的專案資訊)
         // ---------------------------------------------------------
+        // ⚠️ 請務必替換成您的 Supabase URL 和 Key
         const SUPABASE_URL = 'https://fayorxvfxtrycjiiiyfu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZheW9yeHZmeHRyeWNqaWlpeWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyNzY1MTAsImV4cCI6MjA3OTg1MjUxMH0.7znE_AaNg6zESUO-RoSsyFqxCgcxjPT_pQiN557e6Nw';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -802,9 +805,10 @@
             setupEventListeners();
             
             // 初始化日期欄位
-            document.getElementById('weight-date').valueAsDate = new Date();
-            document.getElementById('food-date').valueAsDate = new Date();
-            document.getElementById('photo-date').valueAsDate = new Date(); // 新增
+            const todayDate = new Date().toISOString().split('T')[0];
+            document.getElementById('weight-date').value = todayDate;
+            document.getElementById('food-date').value = todayDate;
+            document.getElementById('photo-date').value = todayDate; 
         });
 
         // 設置事件監聽器
@@ -819,11 +823,11 @@
             document.getElementById('custom-water-amount')?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') submitCustomWater();
             });
-            document.getElementById('chat-input')?.addEventListener('keypress', function(e) { // 新增
+            document.getElementById('chat-input')?.addEventListener('keypress', function(e) { 
                 if (e.key === 'Enter') submitChatQuestion();
             });
             
-            // 日期改變事件
+            // 飲食日期改變事件
             document.getElementById('food-date').addEventListener('change', fetchFoods);
         }
 
@@ -841,12 +845,10 @@
                 }
                 
                 if (session && session.user) {
-                    console.log('用戶已登入:', session.user.email);
                     currentUser = session.user;
                     await loadUserData();
                     showAppScreen();
                 } else {
-                    console.log('沒有找到登入 session');
                     showAuthScreen();
                 }
             } catch (err) {
@@ -864,6 +866,9 @@
             document.getElementById('auth-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
             document.getElementById('user-email').textContent = currentUser.email;
+            
+            // 登入後預設顯示 Dashboard
+            showPage('dashboard'); 
         }
 
         function showAuthForm(formType) {
@@ -888,7 +893,6 @@
             const errorMsg = document.getElementById('register-error');
             const successMsg = document.getElementById('register-success');
 
-            // 驗證輸入
             if (!email || !password) {
                 showMessage(errorMsg, "請填寫所有欄位", 'error');
                 return;
@@ -899,21 +903,14 @@
                 return;
             }
 
-            if (waterGoal < 500 || waterGoal > 10000) {
-                showMessage(errorMsg, "每日飲水目標應在500-10000ml之間", 'error');
-                return;
-            }
-
-            // 設置載入狀態
             setLoadingState('register-btn', true, '註冊中...');
 
             try {
-                console.log('開始註冊用戶:', email);
-                
                 // 註冊用戶
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password,
+                    // 為了在 Auth 表中儲存初始目標
                     options: {
                         data: {
                             water_goal: waterGoal
@@ -922,14 +919,11 @@
                 });
 
                 if (error) {
-                    console.error('註冊錯誤:', error);
                     showMessage(errorMsg, error.message || "註冊失敗，請重試", 'error');
                     return;
                 }
-
-                console.log('註冊成功，用戶ID:', data.user.id);
                 
-                // 創建用戶資料
+                // 創建用戶資料 (user_profiles)
                 const { error: profileError } = await supabase
                     .from('user_profiles')
                     .insert([
@@ -945,14 +939,12 @@
 
                 if (profileError) {
                     console.error('創建用戶資料錯誤:', profileError);
-                    // 繼續執行，不阻擋用戶
                 }
 
                 showMessage(successMsg, "註冊成功！請登入");
                 showAuthForm('login');
                 
             } catch (err) {
-                console.error('註冊過程異常:', err);
                 showMessage(errorMsg, "註冊過程中發生未知錯誤", 'error');
             } finally {
                 setLoadingState('register-btn', false, '註冊帳戶');
@@ -964,36 +956,30 @@
             const password = document.getElementById('login-password').value.trim();
             
             const errorMsg = document.getElementById('login-error');
-            const successMsg = document.getElementById('login-success');
-
+            
             if (!email || !password) {
                 showMessage(errorMsg, "請填寫所有欄位", 'error');
                 return;
             }
 
-            // 設置載入狀態
             setLoadingState('login-btn', true, '登入中...');
 
             try {
-                console.log('嘗試登入:', email);
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) {
-                    console.error('登入錯誤:', error);
                     showMessage(errorMsg, error.message || "登入失敗，請檢查帳號密碼", 'error');
                     return;
                 }
 
-                console.log('登入成功:', data.user.email);
                 currentUser = data.user;
                 await loadUserData();
                 showAppScreen();
                 
             } catch (err) {
-                console.error('登入過程異常:', err);
                 showMessage(errorMsg, "登入過程中發生錯誤", 'error');
             } finally {
                 setLoadingState('login-btn', false, '登入');
@@ -1004,16 +990,13 @@
             try {
                 const { error } = await supabase.auth.signOut();
                 if (error) {
-                    console.error('登出錯誤:', error);
                     alert('登出時發生錯誤');
                     return;
                 }
                 currentUser = null;
                 userProfile = null;
                 showAuthScreen();
-                console.log('登出成功');
             } catch (err) {
-                console.error('登出異常:', err);
                 alert('登出時發生錯誤');
             }
         }
@@ -1024,8 +1007,6 @@
         async function loadUserData() {
             if (!currentUser) return;
             
-            console.log('載入用戶資料...');
-            
             try {
                 // 加載用戶資料
                 const { data: profileData, error: profileError } = await supabase
@@ -1034,9 +1015,12 @@
                     .eq('user_id', currentUser.id)
                     .single();
                 
-                if (profileError) {
+                if (profileError && profileError.code !== 'PGRST116') { // PGRST116: No rows returned
                     console.error('載入用戶資料錯誤:', profileError);
-                    // 創建默認用戶資料
+                }
+                
+                if (!profileData) {
+                    // 如果沒有找到 profile，則創建一個預設 profile (防止首次登入/註冊時資料庫表不存在)
                     await createDefaultUserProfile();
                 } else {
                     userProfile = profileData;
@@ -1048,8 +1032,6 @@
                         fat: profileData.fat_goal || 65,
                         water: profileData.water_goal || 2000
                     };
-                    
-                    // 更新飲水目標輸入框
                     document.getElementById('water-goal').value = userGoals.water;
                 }
                 
@@ -1057,7 +1039,7 @@
                 await fetchWeights();
                 await fetchFoods();
                 await fetchWaterRecords();
-                await fetchProgressPhotos(); // <--- 新增
+                // fetchProgressPhotos(); // 登入時不急著載入，等切換到 photos 頁面再載入
                 updateProgressBars();
                 
             } catch (err) {
@@ -1066,37 +1048,37 @@
         }
 
         async function createDefaultUserProfile() {
+            const defaultGoals = { 
+                water_goal: 2000,
+                calorie_goal: 2000,
+                protein_goal: 100,
+                carb_goal: 250,
+                fat_goal: 65
+            };
+
             const { data, error } = await supabase
                 .from('user_profiles')
-                .insert([
-                    { 
-                        user_id: currentUser.id, 
-                        water_goal: 2000,
-                        calorie_goal: 2000,
-                        protein_goal: 100,
-                        carb_goal: 250,
-                        fat_goal: 65
-                    }
-                ])
+                .insert([{ user_id: currentUser.id, ...defaultGoals }])
                 .select()
                 .single();
             
             if (error) {
                 console.error('創建默認用戶資料錯誤:', error);
-                userProfile = { 
-                    water_goal: 2000,
-                    calorie_goal: 2000,
-                    protein_goal: 100,
-                    carb_goal: 250,
-                    fat_goal: 65
-                };
+                userProfile = defaultGoals;
             } else {
                 userProfile = data;
+                userGoals = {
+                    calories: data.calorie_goal,
+                    protein: data.protein_goal,
+                    carbs: data.carb_goal,
+                    fat: data.fat_goal,
+                    water: data.water_goal
+                };
             }
         }
 
         // ---------------------------------------------------------
-        // 6. 頁面切換與UI功能
+        // 6. 頁面切換與UI功能 (已改良)
         // ---------------------------------------------------------
         function showPage(pageId) {
             // 隱藏所有頁面
@@ -1112,12 +1094,17 @@
             });
             document.getElementById('btn-' + pageId).classList.add('active');
 
-            // 重新整理數據
-            if(pageId === 'dashboard') {
+            // 數據載入優化：只在必要時載入
+            if (pageId === 'dashboard') {
+                fetchWeights();
                 fetchFoods();
-                fetchWaterRecords();
-            } else if (pageId === 'photos') { // <--- 新增
-                fetchProgressPhotos();
+                fetchWaterRecords(); 
+            } else if (pageId === 'food') {
+                fetchFoods(); 
+            } else if (pageId === 'water') {
+                fetchWaterRecords(); 
+            } else if (pageId === 'photos') {
+                fetchProgressPhotos(); 
             }
         }
 
@@ -1159,10 +1146,11 @@
 
             // 更新用戶目標
             userGoals.calories = tdee;
+            // 簡化巨量營養素目標 (P:20%, F:30%, C:50%)
             userGoals.protein = Math.round((tdee * 0.2) / 4);
             userGoals.fat = Math.round((tdee * 0.3) / 9);
             userGoals.carbs = Math.round((tdee * 0.5) / 4);
-            userGoals.water = Math.round(weight * 35);
+            userGoals.water = Math.round(weight * 35); // 每公斤體重 35ml
 
             // 更新資料庫
             await updateUserGoals();
@@ -1491,7 +1479,7 @@
                 return;
             }
 
-            alert(`已記錄 ${amount} ml 飲水！`);
+            // alert(`已記錄 ${amount} ml 飲水！`); // 移除 alert，優化用戶體驗
             await fetchWaterRecords();
         }
 
@@ -1614,7 +1602,7 @@
 
                 // 2. 上傳到 Supabase Storage (Bucket 名稱假設為 progress_photos)
                 const { error: uploadError } = await supabase.storage
-                    .from('progress_photos') // 注意：您需要在 Supabase 後台手動創建此 Bucket
+                    .from('progress_photos') 
                     .upload(filePath, file, {
                         cacheControl: '3600',
                         upsert: false
@@ -1633,7 +1621,7 @@
 
                 // 4. 寫入資料庫 (假設資料表為 progress_logs)
                 const { error: dbError } = await supabase
-                    .from('progress_logs') // 注意：您需要在 Supabase 後台手動創建此 Table
+                    .from('progress_logs') 
                     .insert({
                         user_id: currentUser.id,
                         log_date: date,
@@ -1651,7 +1639,7 @@
 
             } catch (error) {
                 console.error('照片上傳失敗:', error);
-                showMessage(statusMsg, '上傳失敗，請檢查 Bucket 名稱和存取權限: ' + error.message, 'error');
+                showMessage(statusMsg, '上傳失敗，請檢查 Supabase Storage 設定: ' + error.message, 'error');
             } finally {
                 setLoadingState('upload-photo-btn', false, '上傳照片');
             }
@@ -1672,7 +1660,8 @@
 
             if (error) {
                 console.error('載入照片紀錄錯誤:', error);
-                container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--danger);">載入錯誤，請檢查資料表 progress_logs 是否存在。</p>';
+                // 增加提示，引導用戶檢查資料表
+                container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--danger);">載入錯誤：請檢查資料表 `progress_logs` 是否已建立。</p>';
                 return;
             }
 
@@ -1753,14 +1742,15 @@
 
             try {
                 // 4. 呼叫 Edge Function (假設部署在 /ask-ai)
+                const session = await supabase.auth.getSession();
                 const response = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${supabase.auth.session()?.access_token}`, // 傳遞 Token 進行認證
+                        'Authorization': `Bearer ${session.data.session?.access_token}`, // 傳遞 Token 進行認證
                     },
                     body: JSON.stringify({ 
-                        messages: chatHistory // 傳遞歷史紀錄
+                        messages: chatHistory 
                     })
                 });
                 
@@ -1770,17 +1760,17 @@
                 }
 
                 const data = await response.json();
-                const aiResponse = data.response || "抱歉，智慧助理暫時無法回應您的問題。";
+                const aiResponse = data.response || "抱歉，智慧助理暫時無法回應您的問題。請檢查 Edge Function 是否已部署。";
                 
                 // 5. 移除載入訊息並顯示 AI 回覆
                 loadingMsg.remove();
                 appendMessage('ai', aiResponse);
-                chatHistory.push({ role: "ai", content: aiResponse }); // 儲存 AI 回覆
+                chatHistory.push({ role: "assistant", content: aiResponse }); // 儲存 AI 回覆
 
             } catch (error) {
                 console.error('AI 問答錯誤:', error);
                 loadingMsg.remove();
-                showMessage(errorMsg, '連線失敗或後端服務 (ask-ai Edge Function) 發生錯誤。', 'error');
+                showMessage(errorMsg, `連線失敗或後端服務發生錯誤：${error.message} (請檢查 Supabase Edge Function: ask-ai)`, 'error');
                 chatHistory.pop(); // 移除最後一條用戶訊息
             } finally {
                 setLoadingState('chat-btn', false, '送出');
