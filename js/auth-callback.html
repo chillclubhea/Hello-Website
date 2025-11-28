@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>驗證中 - 飲水記錄器</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        .success {
+            color: #2ecc71;
+        }
+        .error {
+            color: #e74c3c;
+        }
+        .loading {
+            color: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="status" class="loading">驗證中...</h1>
+        <p id="message">請稍候，我們正在處理您的驗證請求。</p>
+        <button id="redirect-btn" style="display: none; margin-top: 20px; padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            返回應用程式
+        </button>
+    </div>
+
+    <script>
+        // Supabase 配置 - 需要替換為你的實際值
+        const SUPABASE_URL = 'https://your-project.supabase.co';
+        const SUPABASE_ANON_KEY = 'your-anon-key';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function handleAuthCallback() {
+            const hash = window.location.hash;
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            const type = params.get('type');
+
+            if (type === 'signup' && accessToken) {
+                try {
+                    // 設置 session
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    document.getElementById('status').textContent = '驗證成功！';
+                    document.getElementById('status').className = 'success';
+                    document.getElementById('message').textContent = '您的電子郵件已成功驗證。';
+                    
+                    const redirectBtn = document.getElementById('redirect-btn');
+                    redirectBtn.style.display = 'inline-block';
+                    redirectBtn.onclick = () => {
+                        window.location.href = 'https://chillclubhea.github.io/Hello-Website/';
+                    };
+
+                    // 5秒後自動跳轉
+                    setTimeout(() => {
+                        window.location.href = 'https://chillclubhea.github.io/Hello-Website/';
+                    }, 5000);
+
+                } catch (error) {
+                    console.error('驗證錯誤:', error);
+                    document.getElementById('status').textContent = '驗證失敗';
+                    document.getElementById('status').className = 'error';
+                    document.getElementById('message').textContent = '驗證過程中發生錯誤，請聯繫支援。';
+                }
+            } else {
+                document.getElementById('status').textContent = '無效的驗證連結';
+                document.getElementById('status').className = 'error';
+                document.getElementById('message').textContent = '請檢查您的驗證連結是否正確。';
+            }
+        }
+
+        // 頁面載入時執行驗證
+        document.addEventListener('DOMContentLoaded', handleAuthCallback);
+    </script>
+</body>
+</html>
