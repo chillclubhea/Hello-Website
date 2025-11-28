@@ -65,8 +65,8 @@
             </div>
             <p id="login-error" class="error-msg"></p>
             <p id="login-success" class="success-msg"></p>
-            <button class="btn-block" id="login-btn">登入</button>
-            <div class="toggle-link" id="show-register">
+            <button class="btn-block" onclick="window.handleLogin()">登入</button>
+            <div class="toggle-link" onclick="window.showRegisterScreen()">
                 還沒有帳號？ <span>立即註冊</span>
             </div>
         </div>
@@ -88,8 +88,8 @@
             </div>
             <p id="reg-error" class="error-msg"></p>
             <p id="reg-success" class="success-msg"></p>
-            <button class="btn-block" id="register-btn">註冊並登入</button>
-            <div class="toggle-link" id="show-login">
+            <button class="btn-block" onclick="window.handleRegister()">註冊並登入</button>
+            <div class="toggle-link" onclick="window.showLoginScreen()">
                 已有帳號？ <span>返回登入</span>
             </div>
         </div>
@@ -97,7 +97,7 @@
         <!-- 3. 主應用畫面 (登入後顯示) -->
         <div id="app-screen" class="app-screen">
             <header>
-                <button class="logout-btn" id="logout-btn">
+                <button class="logout-btn" onclick="window.handleLogout()">
                     <i class="fas fa-sign-out-alt"></i> 登出
                 </button>
                 <h1><i class="fas fa-tint"></i> 飲水記錄器</h1>
@@ -122,16 +122,16 @@
 
             <div class="controls">
                 <div class="quick-buttons">
-                    <button class="btn add-btn" data-amount="250">+250ml</button>
-                    <button class="btn add-btn" data-amount="500">+500ml</button>
+                    <button class="btn add-btn" onclick="window.fillAmount(250)">+250ml</button>
+                    <button class="btn add-btn" onclick="window.fillAmount(500)">+500ml</button>
                 </div>
                 
                 <div class="custom-input">
                     <input type="number" id="custom-amount" placeholder="輸入毫升數 (ml)" min="1" max="5000">
-                    <button class="btn submit-btn" id="submit-water">提交記錄</button>
+                    <button class="btn submit-btn" onclick="window.submitWater()">提交記錄</button>
                 </div>
 
-                <button class="btn reset-btn" id="reset-day">重置今日記錄</button>
+                <button class="btn reset-btn" onclick="window.resetDay()">重置今日記錄</button>
             </div>
 
             <div class="history-section">
