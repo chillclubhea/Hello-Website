@@ -86,6 +86,7 @@
             font-size: 1rem;
             margin-top: 10px;
             transition: background 0.3s;
+            position: relative;
         }
 
         .btn-block:hover {
@@ -246,6 +247,7 @@
             cursor: pointer;
             font-weight: bold;
             transition: transform 0.1s, background 0.3s;
+            position: relative;
         }
 
         .btn:active {
@@ -354,11 +356,11 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 30px;
-            height: 30px;
-            margin: -15px 0 0 -15px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary-color);
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid #ffffff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -366,6 +368,13 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .success-msg {
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 5px;
+            min-height: 20px;
         }
     </style>
 </head>
@@ -385,6 +394,7 @@
                 <input type="password" id="login-pass" placeholder="輸入您的密碼">
             </div>
             <p id="login-error" class="error-msg"></p>
+            <p id="login-success" class="success-msg"></p>
             <button class="btn-block" onclick="handleLogin()">登入</button>
             <div class="toggle-link" onclick="showRegister()">
                 還沒有帳號？ <span>立即註冊</span>
@@ -404,9 +414,10 @@
             </div>
             <div class="form-group">
                 <label>每日目標 (ml)</label>
-                <input type="number" id="reg-goal" value="2000">
+                <input type="number" id="reg-goal" value="2000" min="500" max="10000">
             </div>
             <p id="reg-error" class="error-msg"></p>
+            <p id="reg-success" class="success-msg"></p>
             <button class="btn-block" onclick="handleRegister()">註冊並登入</button>
             <div class="toggle-link" onclick="showLogin()">
                 已有帳號？ <span>返回登入</span>
@@ -450,7 +461,7 @@
                 </div>
                 
                 <div class="custom-input">
-                    <input type="number" id="custom-amount" placeholder="輸入毫升數 (ml)">
+                    <input type="number" id="custom-amount" placeholder="輸入毫升數 (ml)" min="1" max="5000">
                     <button class="btn submit-btn" onclick="submitWater()">提交記錄</button>
                 </div>
 
@@ -461,7 +472,7 @@
             <div class="history-section">
                 <h3>今日記錄明細</h3>
                 <ul id="history-list">
-                    <!-- JS 插入 -->
+                    <li style="justify-content:center; color:#999;">載入中...</li>
                 </ul>
             </div>
         </div>
@@ -470,20 +481,34 @@
     <script>
         // --- Supabase 初始化 ---
         // 請替換為您的 Supabase 專案資訊
-        const SUPABASE_URL = 'https://your-project.supabase.co';
-        const SUPABASE_ANON_KEY = 'your-anon-key';
+        const SUPABASE_URL = 'https://your-project.supabase.co'; // 替換為你的URL
+        const SUPABASE_ANON_KEY = 'your-anon-key'; // 替換為你的anon key
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // 初始化 Supabase 客戶端
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         // --- 狀態變數 ---
         let currentUser = null;
         let currentDate = new Date().toDateString();
         let timerInterval = null;
+        let userProfile = null;
 
         // --- 初始化 ---
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('頁面載入完成');
             checkSession();
             startClock();
+            
+            // 添加 Enter 鍵支持
+            document.getElementById('reg-pass')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleRegister();
+            });
+            document.getElementById('login-pass')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleLogin();
+            });
+            document.getElementById('custom-amount')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') submitWater();
+            });
         });
 
         // --- 時鐘功能 ---
@@ -498,40 +523,51 @@
             document.getElementById('current-date').textContent = now.toLocaleDateString('zh-TW', dateOptions);
             const timeString = now.toLocaleTimeString('zh-TW', { hour12: false });
             document.getElementById('real-time-clock').textContent = timeString;
-            
-            // 檢查是否是新的一天
-            const today = now.toDateString();
-            if (today !== currentDate && currentUser) {
-                currentDate = today;
-                checkAndResetDailyData();
-            }
         }
 
         // --- 認證系統 (Auth) ---
         async function checkSession() {
-            const { data: { session }, error } = await supabase.auth.getSession();
-            
-            if (session && session.user) {
-                currentUser = session.user;
-                await loadUserData();
-                showApp();
-            } else {
+            try {
+                console.log('檢查登入狀態...');
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('檢查 session 錯誤:', error);
+                    showLogin();
+                    return;
+                }
+                
+                if (session && session.user) {
+                    console.log('用戶已登入:', session.user.email);
+                    currentUser = session.user;
+                    await loadUserData();
+                    showApp();
+                } else {
+                    console.log('沒有找到登入 session');
+                    showLogin();
+                }
+            } catch (err) {
+                console.error('檢查 session 異常:', err);
                 showLogin();
             }
         }
 
         function showLogin() {
+            console.log('顯示登入畫面');
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('register-screen').classList.add('hidden');
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('login-error').textContent = '';
+            document.getElementById('login-success').textContent = '';
         }
 
         function showRegister() {
+            console.log('顯示註冊畫面');
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('register-screen').classList.remove('hidden');
             document.getElementById('app-screen').style.display = 'none';
             document.getElementById('reg-error').textContent = '';
+            document.getElementById('reg-success').textContent = '';
         }
 
         async function handleRegister() {
@@ -539,6 +575,10 @@
             const password = document.getElementById('reg-pass').value.trim();
             const goal = parseInt(document.getElementById('reg-goal').value) || 2000;
             const errorMsg = document.getElementById('reg-error');
+            const successMsg = document.getElementById('reg-success');
+
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
 
             if (!email || !password) {
                 errorMsg.textContent = "請填寫所有欄位";
@@ -550,10 +590,18 @@
                 return;
             }
 
+            if (goal < 500 || goal > 10000) {
+                errorMsg.textContent = "每日目標應在500-10000ml之間";
+                return;
+            }
+
             // 顯示加載狀態
-            setLoadingState(document.querySelector('#register-screen .btn-block'), true);
+            const registerBtn = document.querySelector('#register-screen .btn-block');
+            setLoadingState(registerBtn, true, '註冊中...');
 
             try {
+                console.log('開始註冊用戶:', email);
+                
                 // 註冊用戶
                 const { data, error } = await supabase.auth.signUp({
                     email: email,
@@ -561,37 +609,58 @@
                 });
 
                 if (error) {
-                    errorMsg.textContent = error.message;
-                    setLoadingState(document.querySelector('#register-screen .btn-block'), false);
+                    console.error('註冊錯誤:', error);
+                    errorMsg.textContent = error.message || "註冊失敗，請重試";
+                    setLoadingState(registerBtn, false, '註冊並登入');
                     return;
                 }
 
+                console.log('註冊成功，用戶ID:', data.user.id);
+                
+                // 等待一下確保用戶資料已創建
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
                 // 創建用戶資料
                 const { error: profileError } = await supabase
                     .from('user_profiles')
                     .insert([
                         { 
                             user_id: data.user.id, 
-                            daily_goal: goal,
-                            created_at: new Date()
+                            daily_goal: goal
                         }
                     ]);
 
                 if (profileError) {
-                    console.error('Error creating user profile:', profileError);
-                    errorMsg.textContent = "創建用戶資料時出錯";
-                    setLoadingState(document.querySelector('#register-screen .btn-block'), false);
+                    console.error('創建用戶資料錯誤:', profileError);
+                    // 即使資料創建失敗，仍然讓用戶登入
+                    console.warn('用戶資料創建失敗，但允許登入');
+                }
+
+                successMsg.textContent = "註冊成功！正在登入...";
+                
+                // 自動登入
+                const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (loginError) {
+                    console.error('自動登入錯誤:', loginError);
+                    successMsg.textContent = "註冊成功！請手動登入";
+                    showLogin();
+                    document.getElementById('login-success').textContent = "註冊成功！請登入";
                     return;
                 }
 
-                // 自動登入
-                currentUser = data.user;
+                currentUser = loginData.user;
+                await loadUserData();
                 showApp();
+                
             } catch (err) {
-                errorMsg.textContent = "註冊過程中發生錯誤";
-                console.error(err);
+                console.error('註冊過程異常:', err);
+                errorMsg.textContent = "註冊過程中發生未知錯誤";
             } finally {
-                setLoadingState(document.querySelector('#register-screen .btn-block'), false);
+                setLoadingState(registerBtn, false, '註冊並登入');
             }
         }
 
@@ -599,6 +668,10 @@
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-pass').value.trim();
             const errorMsg = document.getElementById('login-error');
+            const successMsg = document.getElementById('login-success');
+
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
 
             if (!email || !password) {
                 errorMsg.textContent = "請填寫所有欄位";
@@ -606,90 +679,122 @@
             }
 
             // 顯示加載狀態
-            setLoadingState(document.querySelector('#login-screen .btn-block'), true);
+            const loginBtn = document.querySelector('#login-screen .btn-block');
+            setLoadingState(loginBtn, true, '登入中...');
 
             try {
+                console.log('嘗試登入:', email);
                 const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) {
-                    errorMsg.textContent = error.message;
-                    setLoadingState(document.querySelector('#login-screen .btn-block'), false);
+                    console.error('登入錯誤:', error);
+                    errorMsg.textContent = error.message || "登入失敗，請檢查帳號密碼";
+                    setLoadingState(loginBtn, false, '登入');
                     return;
                 }
 
+                console.log('登入成功:', data.user.email);
                 currentUser = data.user;
                 await loadUserData();
                 showApp();
+                
             } catch (err) {
+                console.error('登入過程異常:', err);
                 errorMsg.textContent = "登入過程中發生錯誤";
-                console.error(err);
             } finally {
-                setLoadingState(document.querySelector('#login-screen .btn-block'), false);
+                setLoadingState(loginBtn, false, '登入');
             }
         }
 
         async function handleLogout() {
-            const { error } = await supabase.auth.signOut();
-            currentUser = null;
-            showLogin();
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    console.error('登出錯誤:', error);
+                alert('登出時發生錯誤');
+                return;
+                }
+                currentUser = null;
+                userProfile = null;
+                showLogin();
+                console.log('登出成功');
+            } catch (err) {
+                console.error('登出異常:', err);
+                alert('登出時發生錯誤');
+            }
         }
 
         // --- 應用程式主要邏輯 ---
         async function loadUserData() {
             if (!currentUser) return;
             
-            // 加載用戶資料
-            const { data: profileData, error: profileError } = await supabase
-                .from('user_profiles')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .single();
+            console.log('載入用戶資料...');
             
-            if (profileError) {
-                console.error('Error loading user profile:', profileError);
-                return;
+            try {
+                // 加載用戶資料
+                const { data: profileData, error: profileError } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                
+                if (profileError) {
+                    console.error('載入用戶資料錯誤:', profileError);
+                    // 如果沒有用戶資料，創建一個默認的
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('user_profiles')
+                        .insert([
+                            { 
+                                user_id: currentUser.id, 
+                                daily_goal: 2000
+                            }
+                        ])
+                        .select()
+                        .single();
+                    
+                    if (createError) {
+                        console.error('創建默認用戶資料錯誤:', createError);
+                        userProfile = { daily_goal: 2000 };
+                    } else {
+                        userProfile = newProfile;
+                    }
+                } else {
+                    userProfile = profileData;
+                }
+                
+                // 加載今日飲水記錄
+                const today = new Date().toISOString().split('T')[0];
+                const { data: waterData, error: waterError } = await supabase
+                    .from('water_records')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('date', today)
+                    .order('created_at', { ascending: false });
+                
+                if (waterError) {
+                    console.error('載入飲水記錄錯誤:', waterError);
+                    updateUI(0, []);
+                    return;
+                }
+                
+                // 更新UI
+                updateUI(waterData, userProfile);
+                
+            } catch (err) {
+                console.error('載入用戶資料異常:', err);
+                // 使用默認值顯示
+                updateUI([], { daily_goal: 2000 });
             }
-            
-            // 加載今日飲水記錄
-            const today = new Date().toISOString().split('T')[0];
-            const { data: waterData, error: waterError } = await supabase
-                .from('water_records')
-                .select('*')
-                .eq('user_id', currentUser.id)
-                .eq('date', today)
-                .order('created_at', { ascending: false });
-            
-            if (waterError) {
-                console.error('Error loading water records:', waterError);
-                return;
-            }
-            
-            // 更新UI
-            document.getElementById('display-username').textContent = currentUser.email.split('@')[0];
-            document.getElementById('goal-intake').textContent = profileData.daily_goal;
-            
-            // 計算今日總飲水量
-            let totalIntake = 0;
-            if (waterData && waterData.length > 0) {
-                waterData.forEach(record => {
-                    totalIntake += record.amount;
-                });
-            }
-            
-            // 更新進度
-            updateProgress(totalIntake, profileData.daily_goal);
-            
-            // 更新歷史記錄
-            updateHistoryList(waterData);
         }
 
         function showApp() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('register-screen').classList.add('hidden');
             document.getElementById('app-screen').style.display = 'block';
+            console.log('顯示主應用畫面');
         }
 
         function fillAmount(amount) {
@@ -703,7 +808,10 @@
         }
 
         async function submitWater() {
-            if (!currentUser) return;
+            if (!currentUser) {
+                alert('請先登入');
+                return;
+            }
             
             const input = document.getElementById('custom-amount');
             const amount = parseInt(input.value);
@@ -719,7 +827,8 @@
             }
             
             // 顯示加載狀態
-            setLoadingState(document.getElementById('submit-water'), true);
+            const submitBtn = document.getElementById('submit-water');
+            setLoadingState(submitBtn, true, '提交中...');
             
             try {
                 const today = new Date().toISOString().split('T')[0];
@@ -729,39 +838,41 @@
                         { 
                             user_id: currentUser.id, 
                             amount: amount,
-                            date: today,
-                            created_at: new Date()
+                            date: today
                         }
                     ]);
                 
                 if (error) {
-                    console.error('Error adding water record:', error);
+                    console.error('添加飲水記錄錯誤:', error);
                     alert("記錄添加失敗，請重試");
                     return;
                 }
                 
+                console.log('飲水記錄添加成功');
                 // 重新加載數據
                 await loadUserData();
                 
                 // 清空輸入框
                 input.value = '';
+                
             } catch (err) {
-                console.error('Error submitting water:', err);
+                console.error('提交飲水記錄異常:', err);
                 alert("提交過程中發生錯誤");
             } finally {
-                setLoadingState(document.getElementById('submit-water'), false);
+                setLoadingState(submitBtn, false, '提交記錄');
             }
         }
 
         async function resetDay() {
             if (!currentUser) return;
             
-            if (!confirm("確定要清空今日的所有記錄嗎？")) {
+            if (!confirm("確定要清空今日的所有記錄嗎？此操作無法復原！")) {
                 return;
             }
             
             // 顯示加載狀態
-            setLoadingState(document.getElementById('reset-day'), true);
+            const resetBtn = document.getElementById('reset-day');
+            setLoadingState(resetBtn, true, '重置中...');
             
             try {
                 const today = new Date().toISOString().split('T')[0];
@@ -772,36 +883,50 @@
                     .eq('date', today);
                 
                 if (error) {
-                    console.error('Error resetting daily records:', error);
+                    console.error('重置記錄錯誤:', error);
                     alert("重置失敗，請重試");
                     return;
                 }
                 
+                console.log('重置成功');
                 // 重新加載數據
                 await loadUserData();
+                
             } catch (err) {
-                console.error('Error resetting day:', err);
+                console.error('重置異常:', err);
                 alert("重置過程中發生錯誤");
             } finally {
-                setLoadingState(document.getElementById('reset-day'), false);
+                setLoadingState(resetBtn, false, '重置今日記錄');
             }
         }
 
-        async function checkAndResetDailyData() {
-            // 檢查是否需要重置每日數據
-            // 在Supabase中，我們不需要手動重置，因為我們按日期存儲記錄
-            // 這個函數主要用於更新UI
-            await loadUserData();
-        }
-
-        function updateProgress(currentIntake, goal) {
-            document.getElementById('current-intake').textContent = currentIntake;
+        function updateUI(waterData, profile) {
+            if (!profile) return;
             
-            let percentage = Math.round((currentIntake / goal) * 100);
+            // 更新用戶名
+            const username = currentUser.email.split('@')[0];
+            document.getElementById('display-username').textContent = username;
+            document.getElementById('goal-intake').textContent = profile.daily_goal;
+            
+            // 計算今日總飲水量
+            let totalIntake = 0;
+            if (waterData && waterData.length > 0) {
+                waterData.forEach(record => {
+                    totalIntake += record.amount;
+                });
+            }
+            
+            document.getElementById('current-intake').textContent = totalIntake;
+            
+            // 更新進度百分比
+            let percentage = Math.round((totalIntake / profile.daily_goal) * 100);
             if (percentage > 100) percentage = 100;
             
             document.getElementById('percentage').textContent = percentage + '%';
             document.getElementById('wave').style.height = percentage + '%';
+            
+            // 更新歷史記錄
+            updateHistoryList(waterData);
         }
 
         function updateHistoryList(records) {
@@ -827,13 +952,23 @@
             }
         }
 
-        function setLoadingState(button, isLoading) {
+        function setLoadingState(button, isLoading, text = '') {
+            if (!button) return;
+            
             if (isLoading) {
                 button.classList.add('loading');
                 button.disabled = true;
+                if (text) {
+                    button.dataset.originalText = button.textContent;
+                    button.textContent = text;
+                }
             } else {
                 button.classList.remove('loading');
                 button.disabled = false;
+                if (button.dataset.originalText) {
+                    button.textContent = button.dataset.originalText;
+                    delete button.dataset.originalText;
+                }
             }
         }
     </script>
