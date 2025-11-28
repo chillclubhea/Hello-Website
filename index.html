@@ -4,13 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全方位健康管理中心</title>
-    <!-- 引入 Chart.js 用於繪圖 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 引入 Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- 引入 Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- 引入 Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -18,6 +14,7 @@
             --primary: #4F46E5; /* 靛藍色 */
             --secondary: #10B981; /* 翠綠色 */
             --water: #3B82F6; /* 藍色 - 用於飲水功能 */
+            --ai-chat: #A855F7; /* 紫色 - 用於 AI 功能 */
             --bg: #F3F4F6;
             --card-bg: #FFFFFF;
             --text-main: #1F2937;
@@ -121,6 +118,9 @@
         .btn-success:hover { background-color: #0da271; }
         .btn-danger { background-color: var(--danger); margin-top: 5px; font-size: 0.8rem; padding: 5px 10px; width: auto;}
         .btn-water { background-color: var(--water); }
+        .btn-ai { background-color: var(--ai-chat); }
+        .btn-ai:hover { background-color: #7c3aed; }
+
 
         .message {
             padding: 12px;
@@ -318,6 +318,87 @@
             font-size: 0.8rem;
         }
 
+        /* ----------------------- 新增功能樣式 ----------------------- */
+        /* 照片追蹤樣式 */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .photo-item {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .photo-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+        .photo-info {
+            padding: 10px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* AI Chatbot 樣式 */
+        #chat-window {
+            height: 400px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-message {
+            max-width: 80%;
+            padding: 10px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--primary);
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+        .ai-message {
+            align-self: flex-start;
+            background-color: #E5E7EB;
+            color: var(--text-main);
+            border-bottom-left-radius: 0;
+        }
+        .ai-loading {
+            align-self: flex-start;
+            color: var(--ai-chat);
+            font-style: italic;
+            animation: pulse 1s infinite;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            border: 2px solid #D1D5DB;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
         /* 載入狀態 */
         .loading {
             opacity: 0.7;
@@ -331,22 +412,21 @@
             .nav-links button { font-size: 0.8rem; padding: 4px 8px; }
             .water-quick-actions { grid-template-columns: repeat(2, 1fr); }
             .stats-grid { grid-template-columns: 1fr; }
+            .photo-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 登入/註冊頁面 -->
     <div id="auth-screen" class="auth-container">
         <div class="auth-card">
-            <h1 class="auth-title"><i class="fas fa-heartbeat"></i> 觀塘ONE2FIT</h1>
+            <h1 class="auth-title"><i class="fas fa-heartbeat"></i> HealthTrack</h1>
             
             <div class="auth-tabs">
                 <button class="auth-tab active" onclick="showAuthForm('login')">登入</button>
                 <button class="auth-tab" onclick="showAuthForm('register')">註冊</button>
             </div>
 
-            <!-- 登入表單 -->
             <div id="login-form" class="auth-form active">
                 <div id="login-error" class="message error" style="display: none;"></div>
                 <div id="login-success" class="message success" style="display: none;"></div>
@@ -364,7 +444,6 @@
                 <button class="btn" onclick="handleLogin()" id="login-btn">登入</button>
             </div>
 
-            <!-- 註冊表單 -->
             <div id="register-form" class="auth-form">
                 <div id="register-error" class="message error" style="display: none;"></div>
                 <div id="register-success" class="message success" style="display: none;"></div>
@@ -389,11 +468,10 @@
         </div>
     </div>
 
-    <!-- 主應用程式 -->
     <div id="app-screen" class="app-container">
         <nav>
             <div class="nav-container">
-                <div class="nav-title">觀塘ONE2FIT</div>
+                <div class="nav-title">HealthTrack</div>
                 <div class="nav-user">
                     <i class="fas fa-user-circle"></i>
                     <span id="user-email">用戶</span>
@@ -404,14 +482,13 @@
                     <button onclick="showPage('food')" id="btn-food">飲食</button>
                     <button onclick="showPage('water')" id="btn-water">飲水</button>
                     <button onclick="showPage('workout')" id="btn-workout">運動</button>
-                    <button onclick="handleLogout()" id="btn-logout"><i class="fas fa-sign-out-alt"></i> 登出</button>
+                    <button onclick="showPage('photos')" id="btn-photos">照片</button> <button onclick="showPage('chatbot')" id="btn-chatbot">問答</button> <button onclick="handleLogout()" id="btn-logout"><i class="fas fa-sign-out-alt"></i> 登出</button>
                 </div>
             </div>
         </nav>
 
         <div class="container">
 
-            <!-- 1. 總覽與體重圖表頁 -->
             <div id="dashboard" class="page-section active">
                 <div class="card">
                     <h2>今日目標摘要</h2>
@@ -456,7 +533,6 @@
                 </div>
             </div>
 
-            <!-- 2. TDEE/BMR 計算器頁 -->
             <div id="calculator" class="page-section">
                 <div class="card">
                     <h2>TDEE & BMR 計算器</h2>
@@ -499,7 +575,6 @@
                 </div>
             </div>
 
-            <!-- 3. 飲食紀錄頁 -->
             <div id="food" class="page-section">
                 <div class="card">
                     <h2>新增飲食紀錄</h2>
@@ -540,7 +615,6 @@
                 </div>
             </div>
 
-            <!-- 4. 飲水記錄頁 -->
             <div id="water" class="page-section">
                 <div class="card">
                     <h2 style="border-color: var(--water); color: var(--water);">飲水記錄器</h2>
@@ -590,7 +664,6 @@
                 </div>
             </div>
 
-            <!-- 5. 運動計畫頁 -->
             <div id="workout" class="page-section">
                 <div class="card">
                     <h2>推薦運動計畫</h2>
@@ -630,6 +703,58 @@
                 </div>
             </div>
 
+            <div id="photos" class="page-section">
+                <div class="card">
+                    <h2 style="border-color: var(--secondary); color: var(--secondary);">新增照片紀錄</h2>
+                    <p style="margin-bottom: 15px; color: var(--text-light);">請上傳您的前後對比照片，以視覺化追蹤進度。</p>
+                    
+                    <div class="form-group">
+                        <label for="photo-date"><i class="fas fa-calendar-alt"></i> 紀錄日期</label>
+                        <input type="date" id="photo-date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="photo-type"><i class="fas fa-camera"></i> 照片類型</label>
+                        <select id="photo-type">
+                            <option value="before">Before (開始前)</option>
+                            <option value="after">After (進度/完成後)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="photo-file"><i class="fas fa-file-upload"></i> 選擇照片檔案</label>
+                        <input type="file" id="photo-file" accept="image/*">
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="uploadProgressPhoto()" id="upload-photo-btn">上傳照片</button>
+                    <div id="photo-status" class="message success" style="display: none; margin-top: 15px;"></div>
+                </div>
+
+                <div class="card">
+                    <h2 style="border-color: var(--secondary); color: var(--secondary);">照片歷史紀錄</h2>
+                    <div id="photo-history" class="photo-grid">
+                        <p style="text-align: center; grid-column: 1 / -1; color: #999;">載入中...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chatbot" class="page-section">
+                <div class="card">
+                    <h2 style="border-color: var(--ai-chat); color: var(--ai-chat);">健康智慧助理 <i class="fas fa-robot"></i></h2>
+                    <p style="margin-bottom: 15px; color: var(--text-light);">您可以詢問任何關於營養、運動或健康管理的問題。</p>
+
+                    <div id="chat-window">
+                        <div class="ai-message">您好！我是您的健康助理，請問有什麼可以為您服務的嗎？</div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="詢問您的健康問題...">
+                        <button class="btn btn-ai" onclick="submitChatQuestion()" id="chat-btn" style="width: 120px; padding: 12px;">送出</button>
+                    </div>
+                    <div id="chat-error" class="message error" style="display: none; margin-top: 15px;"></div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -661,6 +786,10 @@
         let todayIntake = { calories: 0, protein: 0, carbs: 0, fat: 0 };
         let todayWaterIntake = 0;
         let waterRecords = [];
+        
+        // Chatbot 歷史紀錄 (用於 Edge Function)
+        let chatHistory = [{ role: "system", content: "你是一位友善且專業的健康與營養專家，請以繁體中文回答所有關於健身、營養、飲食和運動計畫的問題。" }];
+
 
         // ---------------------------------------------------------
         // 3. 初始化與頁面載入
@@ -675,6 +804,7 @@
             // 初始化日期欄位
             document.getElementById('weight-date').valueAsDate = new Date();
             document.getElementById('food-date').valueAsDate = new Date();
+            document.getElementById('photo-date').valueAsDate = new Date(); // 新增
         });
 
         // 設置事件監聽器
@@ -688,6 +818,9 @@
             });
             document.getElementById('custom-water-amount')?.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') submitCustomWater();
+            });
+            document.getElementById('chat-input')?.addEventListener('keypress', function(e) { // 新增
+                if (e.key === 'Enter') submitChatQuestion();
             });
             
             // 日期改變事件
@@ -757,17 +890,17 @@
 
             // 驗證輸入
             if (!email || !password) {
-                showMessage(errorMsg, "請填寫所有欄位");
+                showMessage(errorMsg, "請填寫所有欄位", 'error');
                 return;
             }
 
             if (password.length < 6) {
-                showMessage(errorMsg, "密碼至少需要6位字符");
+                showMessage(errorMsg, "密碼至少需要6位字符", 'error');
                 return;
             }
 
             if (waterGoal < 500 || waterGoal > 10000) {
-                showMessage(errorMsg, "每日飲水目標應在500-10000ml之間");
+                showMessage(errorMsg, "每日飲水目標應在500-10000ml之間", 'error');
                 return;
             }
 
@@ -790,7 +923,7 @@
 
                 if (error) {
                     console.error('註冊錯誤:', error);
-                    showMessage(errorMsg, error.message || "註冊失敗，請重試");
+                    showMessage(errorMsg, error.message || "註冊失敗，請重試", 'error');
                     return;
                 }
 
@@ -820,7 +953,7 @@
                 
             } catch (err) {
                 console.error('註冊過程異常:', err);
-                showMessage(errorMsg, "註冊過程中發生未知錯誤");
+                showMessage(errorMsg, "註冊過程中發生未知錯誤", 'error');
             } finally {
                 setLoadingState('register-btn', false, '註冊帳戶');
             }
@@ -834,7 +967,7 @@
             const successMsg = document.getElementById('login-success');
 
             if (!email || !password) {
-                showMessage(errorMsg, "請填寫所有欄位");
+                showMessage(errorMsg, "請填寫所有欄位", 'error');
                 return;
             }
 
@@ -850,7 +983,7 @@
 
                 if (error) {
                     console.error('登入錯誤:', error);
-                    showMessage(errorMsg, error.message || "登入失敗，請檢查帳號密碼");
+                    showMessage(errorMsg, error.message || "登入失敗，請檢查帳號密碼", 'error');
                     return;
                 }
 
@@ -861,7 +994,7 @@
                 
             } catch (err) {
                 console.error('登入過程異常:', err);
-                showMessage(errorMsg, "登入過程中發生錯誤");
+                showMessage(errorMsg, "登入過程中發生錯誤", 'error');
             } finally {
                 setLoadingState('login-btn', false, '登入');
             }
@@ -924,6 +1057,7 @@
                 await fetchWeights();
                 await fetchFoods();
                 await fetchWaterRecords();
+                await fetchProgressPhotos(); // <--- 新增
                 updateProgressBars();
                 
             } catch (err) {
@@ -982,6 +1116,8 @@
             if(pageId === 'dashboard') {
                 fetchFoods();
                 fetchWaterRecords();
+            } else if (pageId === 'photos') { // <--- 新增
+                fetchProgressPhotos();
             }
         }
 
@@ -1445,9 +1581,215 @@
             alert(`飲水目標已更新為 ${newGoal} ml`);
             updateWaterDisplay();
         }
+        
+        // ---------------------------------------------------------
+        // 11. 照片追蹤功能 (新增)
+        // ---------------------------------------------------------
+        
+        async function uploadProgressPhoto() {
+            if (!currentUser) {
+                alert('請先登入');
+                return;
+            }
+
+            const fileInput = document.getElementById('photo-file');
+            const file = fileInput.files[0];
+            const date = document.getElementById('photo-date').value;
+            const type = document.getElementById('photo-type').value;
+            const statusMsg = document.getElementById('photo-status');
+
+            if (!file || !date) {
+                showMessage(statusMsg, "請選擇檔案並輸入日期", 'error');
+                return;
+            }
+
+            // 設置載入狀態
+            setLoadingState('upload-photo-btn', true, '上傳中...');
+            showMessage(statusMsg, '檔案上傳中，請稍候...', 'success');
+
+            try {
+                // 1. 準備儲存路徑 (例如: user_id/2025-11-28_before_timestamp.jpg)
+                const fileExtension = file.name.split('.').pop();
+                const filePath = `${currentUser.id}/${date}_${type}_${Date.now()}.${fileExtension}`;
+
+                // 2. 上傳到 Supabase Storage (Bucket 名稱假設為 progress_photos)
+                const { error: uploadError } = await supabase.storage
+                    .from('progress_photos') // 注意：您需要在 Supabase 後台手動創建此 Bucket
+                    .upload(filePath, file, {
+                        cacheControl: '3600',
+                        upsert: false
+                    });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                // 3. 取得公開 URL
+                const { data: publicUrlData } = supabase.storage
+                    .from('progress_photos')
+                    .getPublicUrl(filePath);
+                
+                const photoUrl = publicUrlData.publicUrl;
+
+                // 4. 寫入資料庫 (假設資料表為 progress_logs)
+                const { error: dbError } = await supabase
+                    .from('progress_logs') // 注意：您需要在 Supabase 後台手動創建此 Table
+                    .insert({
+                        user_id: currentUser.id,
+                        log_date: date,
+                        photo_type: type,
+                        photo_url: photoUrl
+                    });
+
+                if (dbError) {
+                    throw dbError;
+                }
+
+                showMessage(statusMsg, "照片上傳成功！");
+                fileInput.value = ''; // 清空檔案輸入框
+                fetchProgressPhotos(); // 重新整理列表
+
+            } catch (error) {
+                console.error('照片上傳失敗:', error);
+                showMessage(statusMsg, '上傳失敗，請檢查 Bucket 名稱和存取權限: ' + error.message, 'error');
+            } finally {
+                setLoadingState('upload-photo-btn', false, '上傳照片');
+            }
+        }
+
+        async function fetchProgressPhotos() {
+            if (!currentUser) return;
+            
+            const container = document.getElementById('photo-history');
+            container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: #999;">載入中...</p>';
+            
+            // 假設資料表為 progress_logs
+            const { data, error } = await supabase
+                .from('progress_logs')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('log_date', { ascending: false });
+
+            if (error) {
+                console.error('載入照片紀錄錯誤:', error);
+                container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: var(--danger);">載入錯誤，請檢查資料表 progress_logs 是否存在。</p>';
+                return;
+            }
+
+            renderPhotoHistory(data);
+        }
+
+        function renderPhotoHistory(photos) {
+            const container = document.getElementById('photo-history');
+            container.innerHTML = ''; // 清空現有內容
+
+            if (photos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; grid-column: 1 / -1; color: #999;">尚無照片紀錄</p>';
+                return;
+            }
+
+            photos.forEach(photo => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                
+                const typeText = photo.photo_type === 'before' 
+                    ? '<span style="color:#F59E0B; font-weight:bold;">開始前</span>' 
+                    : '<span style="color:var(--secondary); font-weight:bold;">進度後</span>';
+
+                div.innerHTML = `
+                    <img src="${photo.photo_url}" alt="${photo.photo_type}照片">
+                    <div class="photo-info">
+                        <span>${photo.log_date}</span>
+                        ${typeText}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
 
         // ---------------------------------------------------------
-        // 11. 輔助函數
+        // 12. 即時 AI 問答功能 (新增)
+        // ---------------------------------------------------------
+        
+        function appendMessage(role, content) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message ' + (role === 'user' ? 'user-message' : 'ai-message');
+            messageDiv.textContent = content;
+            
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // 滾動到底部
+        }
+
+        async function submitChatQuestion() {
+            if (!currentUser) {
+                alert('請先登入');
+                return;
+            }
+            
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            const errorMsg = document.getElementById('chat-error');
+            
+            if (!question) return;
+
+            // 1. 清空輸入並顯示用戶訊息
+            input.value = '';
+            errorMsg.style.display = 'none';
+            appendMessage('user', question);
+            
+            // 2. 顯示 AI 載入訊息
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'ai-message ai-loading';
+            loadingMsg.textContent = '智慧助理思考中...';
+            document.getElementById('chat-window').appendChild(loadingMsg);
+            document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;
+
+            // 3. 更新 chatHistory (用於模擬對話連貫性)
+            chatHistory.push({ role: "user", content: question });
+            
+            // 設置按鈕載入狀態
+            setLoadingState('chat-btn', true);
+
+            try {
+                // 4. 呼叫 Edge Function (假設部署在 /ask-ai)
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabase.auth.session()?.access_token}`, // 傳遞 Token 進行認證
+                    },
+                    body: JSON.stringify({ 
+                        messages: chatHistory // 傳遞歷史紀錄
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorJson = await response.json();
+                    throw new Error(errorJson.message || `API 呼叫失敗，狀態碼: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.response || "抱歉，智慧助理暫時無法回應您的問題。";
+                
+                // 5. 移除載入訊息並顯示 AI 回覆
+                loadingMsg.remove();
+                appendMessage('ai', aiResponse);
+                chatHistory.push({ role: "ai", content: aiResponse }); // 儲存 AI 回覆
+
+            } catch (error) {
+                console.error('AI 問答錯誤:', error);
+                loadingMsg.remove();
+                showMessage(errorMsg, '連線失敗或後端服務 (ask-ai Edge Function) 發生錯誤。', 'error');
+                chatHistory.pop(); // 移除最後一條用戶訊息
+            } finally {
+                setLoadingState('chat-btn', false, '送出');
+            }
+        }
+
+
+        // ---------------------------------------------------------
+        // 13. 輔助函數
         // ---------------------------------------------------------
         function updateProgressBars() {
             updateBar('cal', todayIntake.calories, userGoals.calories);
@@ -1464,8 +1806,9 @@
             document.getElementById(`${type}-bar`).style.width = `${percentage}%`;
         }
 
-        function showMessage(element, message) {
+        function showMessage(element, message, type = 'success') {
             element.textContent = message;
+            element.className = `message ${type}`;
             element.style.display = 'block';
         }
 
