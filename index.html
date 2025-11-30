@@ -1920,8 +1920,9 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.data.session?.access_token}`, // 傳遞 Token 進行認證
                     },
-                    body: JSON.stringify({ 
-                        messages: chatHistory 
+                body: JSON.stringify({ 
+                        user_id: currentUser.id, // ⭐️ 新增此行，傳遞當前登入用戶的 ID
+                        messages: chatHistory
                     })
                 });
                 
