@@ -88,9 +88,12 @@
 
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-main); }
-        input, select {
+        
+        /* 提升手機上的觸控目標大小和間距優化 */
+        .btn, input, select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px; /* 增加垂直填充 */
+            min-height: 48px; /* 確保最小觸控高度 */
             border: 2px solid #E5E7EB;
             border-radius: 8px;
             font-size: 1rem;
@@ -102,13 +105,9 @@
         }
 
         .btn {
-            width: 100%;
-            padding: 14px;
             background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s;
@@ -145,7 +144,7 @@
         /* 主應用程式樣式 */
         .app-container {
             display: none;
-            padding-bottom: 80px;
+            padding-bottom: 80px; /* 為底部導航欄保留空間 */
         }
 
         /* 導覽列 */
@@ -187,6 +186,9 @@
             padding: 5px 10px;
             border-radius: 4px;
             transition: all 0.2s;
+            /* 覆寫 .btn 的樣式 */
+            min-height: auto; 
+            width: auto;
         }
         .nav-links button.active { 
             color: white; 
@@ -236,8 +238,11 @@
         }
         .food-info div { font-size: 0.85rem; color: var(--text-light); }
         
-        /* 營養條 */
-        .progress-container { margin-bottom: 10px; }
+        /* 營養條 & 儀表板優化 */
+        .progress-container { 
+            padding: 5px 0; /* 增加垂直填充 */
+            margin-bottom: 15px; 
+        }
         .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 2px; }
         .progress-bar-bg { background: #E5E7EB; height: 8px; border-radius: 4px; overflow: hidden; }
         .progress-bar-fill { height: 100%; width: 0%; transition: width 0.5s; } /* 移除背景色，讓 JS 設定 */
@@ -307,14 +312,16 @@
             border-color: var(--water);
         }
         
-        /* 飲水輸入框優化 (目標 2) */
+        /* 飲水輸入框優化 */
         .water-custom-input {
             display: flex;
             gap: 10px;
             margin: 15px 0;
+            align-items: center;
         }
         .water-custom-input input {
             flex: 3; /* 給予輸入框更多空間 */
+            min-height: 48px; /* 確保最小觸控高度 */
         }
         .water-custom-input button {
             flex-shrink: 0;
@@ -425,11 +432,67 @@
             pointer-events: none;
         }
 
-        /* RWD */
+        /* 底部導航欄樣式 (新增) */
+        .bottom-nav {
+            display: none; /* 預設隱藏，只在手機上顯示 */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--card-bg);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            justify-content: space-around;
+            align-items: center;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            color: var(--text-light);
+            font-size: 0.7rem;
+            cursor: pointer;
+            flex: 1;
+            transition: color 0.2s;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        .bottom-nav-item.active {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* RWD: 僅手機排版調整 */
         @media (max-width: 600px) {
             .auth-card { padding: 30px 20px; }
-            .nav-links { gap: 5px; }
-            .nav-links button { font-size: 0.8rem; padding: 4px 8px; }
+            
+            /* 隱藏頂部導航欄中的頁面按鈕，只保留 Title 和 User */
+            .nav-links {
+                display: none !important; /* 強制隱藏頂部頁面切換按鈕 */
+            }
+            .nav-user {
+                margin-left: auto; /* 將用戶資訊推到最右邊 */
+                padding-right: 10px;
+            }
+            .nav-title {
+                width: auto;
+            }
+            
+            /* 在手機尺寸下顯示底部導航欄 */
+            .bottom-nav {
+                display: flex; 
+            }
+
             .water-quick-actions { grid-template-columns: repeat(2, 1fr); }
             .stats-grid { grid-template-columns: 1fr; }
             .photo-grid { grid-template-columns: 1fr; }
@@ -538,13 +601,15 @@
 
                 <div class="card">
                     <h2>體重紀錄</h2>
-                    <div class="form-group">
-                        <label>日期</label>
-                        <input type="date" id="weight-date">
-                    </div>
-                    <div class="form-group">
-                        <label>體重 (kg)</label>
-                        <input type="number" id="weight-input" placeholder="例如: 65.5" step="0.1">
+                    <div class="weight-input-group" style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <div style="flex: 1;">
+                            <label>日期</label>
+                            <input type="date" id="weight-date">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>體重 (kg)</label>
+                            <input type="number" id="weight-input" placeholder="例如: 65.5" step="0.1">
+                        </div>
                     </div>
                     <button class="btn" onclick="addWeight()">紀錄體重</button>
                 </div>
@@ -789,6 +854,28 @@
         </div>
     </div>
 
+    <div id="bottom-nav" class="bottom-nav">
+        <div class="bottom-nav-item active" id="b-btn-dashboard" onclick="showPage('dashboard')">
+            <i class="fas fa-chart-line"></i>
+            <span>總覽</span>
+        </div>
+        <div class="bottom-nav-item" id="b-btn-food" onclick="showPage('food')">
+            <i class="fas fa-utensils"></i>
+            <span>飲食</span>
+        </div>
+        <div class="bottom-nav-item" id="b-btn-water" onclick="showPage('water')">
+            <i class="fas fa-glass-water"></i>
+            <span>飲水</span>
+        </div>
+        <div class="bottom-nav-item" id="b-btn-photos" onclick="showPage('photos')">
+            <i class="fas fa-camera"></i>
+            <span>照片</span>
+        </div>
+        <div class="bottom-nav-item" id="b-btn-chatbot" onclick="showPage('chatbot')">
+            <i class="fas fa-robot"></i>
+            <span>問答</span>
+        </div>
+    </div>
     <script>
         // ---------------------------------------------------------
         // 1. Supabase 設定 (請替換成您的專案資訊)
@@ -1127,13 +1214,25 @@
             // 顯示選中頁面
             document.getElementById(pageId).classList.add('active');
             
-            // 更新按鈕狀態
+            // --- 更新頂部按鈕狀態 ---
             document.querySelectorAll('.nav-links button').forEach(btn => {
                 if (btn.id !== 'btn-logout') {
                     btn.classList.remove('active');
                 }
             });
-            document.getElementById('btn-' + pageId).classList.add('active');
+            const topBtn = document.getElementById('btn-' + pageId);
+            if (topBtn) {
+                topBtn.classList.add('active');
+            }
+            
+            // --- 更新底部按鈕狀態 (新增) ---
+            document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const bottomBtn = document.getElementById('b-btn-' + pageId);
+            if (bottomBtn) {
+                bottomBtn.classList.add('active');
+            }
 
             // 數據載入優化：只在必要時載入
             if (pageId === 'dashboard') {
